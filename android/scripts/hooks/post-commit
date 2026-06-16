@@ -29,9 +29,9 @@ if [ "$CHANGELOG_LINES" -eq 0 ]; then
         -File "android/scripts/smoke-test.ps1"
     EXIT=$?
 else
-    echo ">>> [post-commit] CHANGELOG.md updated -- smoke test + auto-merge to main..."
+    echo ">>> [post-commit] CHANGELOG.md updated -- build + smoke test + auto-merge to main..."
     powershell.exe -ExecutionPolicy Bypass -NonInteractive \
-        -File "android/scripts/smoke-test.ps1" -AutoMerge
+        -File "android/scripts/smoke-test.ps1" -Build -AutoMerge
     EXIT=$?
     if [ $EXIT -eq 0 ]; then
         echo ">>> [post-commit] SUCCESS: $BRANCH merged to main and pushed to origin."

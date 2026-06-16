@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  VoiceBridge smoke test -- build, install, drive the app through Record/Stop/Play/Transcribe,
+  VoiceBridge smoke test -- build, install, drive the app through Record/Stop/Play/Transcribe/Translate,
   capture a screenshot of each step, and fail loudly on any crash or missing UI element.
   Codifies the manual post-feature verification as a single repeatable command.
 
@@ -10,13 +10,14 @@
     1. (optional) assembleDebug
     2. Ensure emulator is booted
     3. adb install -r; grant RECORD_AUDIO programmatically (avoids dialog blocking tests)
-    4. Launch app, screenshot initial state; verify all 4 buttons present
-    5. Verify initial enabled/disabled states (Record=on, Stop/Play/Transcribe=off)
+    4. Launch app, screenshot initial state; verify all buttons present
+    5. Verify initial enabled/disabled states (Record=on, Stop/Play/Transcribe/Translate=off)
     6. Tap Record -> wait 2s -> screenshot recording state (Stop=on, Record=off)
-    7. Tap Stop -> screenshot stopped state (Play=on, Transcribe=on)
+    7. Tap Stop -> screenshot stopped state (Play=on, Transcribe=on, Translate=off)
     8. Tap Play -> wait 3s -> screenshot playback
     9. Tap Transcribe -> verify error card (missing key) or transcript card (key set)
-   10. Scan logcat for FATAL/AndroidRuntime crashes; confirm app is still foreground
+   10. Translate flow: type test text if no transcript, tap Translate, verify result or error card
+   11. Scan logcat for FATAL/AndroidRuntime crashes; confirm app is still foreground
 
   Screenshots land in android/app/build/smoke-<timestamp>/ (gitignored).
   Element taps are resolved from a live uiautomator dump by @text or content-desc --
@@ -40,8 +41,8 @@
   # Use an already-built APK (faster on re-runs)
   powershell -File android/scripts/smoke-test.ps1
 
-  # Full release flow: smoke test + auto-merge to main (called by post-commit hook)
-  powershell -File android/scripts/smoke-test.ps1 -AutoMerge
+  # Full release flow: build + smoke test + auto-merge (called by post-commit hook on CHANGELOG update)
+  powershell -File android/scripts/smoke-test.ps1 -Build -AutoMerge
 #>
 param(
     [switch] $Build,
@@ -218,12 +219,22 @@ Assert-Node    $ui "contains(@text,'VoiceBridge')"  "app title"
 Assert-Node    $ui "@text='Record'"                  "Record button"
 Assert-Node    $ui "@text='Stop'"                    "Stop button"
 Assert-Node    $ui "@text='Play'"                    "Play button"
-Assert-Node    $ui "contains(@text,'Transcribe')"    "Transcribe button"
+Assert-Node    $ui "contains(@text,'Transcribe')"    "Transcribe (Gujarati) button"
+Assert-Node    $ui "contains(@text,'(English)')"     "Translate (English) button"
 # Initial state: Record enabled (permission granted), rest disabled (no recording yet).
 # KEEP IN SYNC with UiState defaults in MainViewModel.kt.
 Assert-Enabled $ui "Record"  $true
 Assert-Enabled $ui "Stop"    $false
 Assert-Enabled $ui "Play"    $false
+# Translate starts disabled (transcript field empty)
+$translateNode = $ui.SelectSingleNode("//node[contains(@text,'(English)')]")
+if ($null -eq $translateNode) {
+    Fail "Translate (English) button not found in initial state"
+} elseif ($translateNode.enabled -eq "true") {
+    Fail "Translate (English) should be disabled initially (no transcript); got enabled=true"
+} else {
+    Log "Translate (English) disabled initially (correct)" "Green"
+}
 Save-Shot "initial-state"
 Log ""
 
@@ -292,7 +303,47 @@ if ($tapped) {
 }
 Log ""
 
-# --- 9. crash check -----------------------------------------------------------
+# --- 9. translate flow --------------------------------------------------------
+# Chunk 2: test the Translate (English) button.
+# If STT produced a transcript, use it. Otherwise type ASCII test text into the editable
+# transcript field so we can drive the button without a real GCP key.
+# Either a translation card or an error card proves the flow fires and does not crash.
+# KEEP IN SYNC with button label and contentDescription in MainActivity.kt.
+Log "Testing Translate flow..."
+$ui = Get-Ui
+$transcriptField = $ui.SelectSingleNode("//node[@content-desc='transcript-field']")
+$hasTranscriptText = ($transcriptField -and $transcriptField.text -and $transcriptField.text.Length -gt 0 -and $transcriptField.text -ne "Transcription appears here, or type directly to test translation")
+if (-not $hasTranscriptText) {
+    Log "No transcript text from STT -- typing test input into transcript field" "Yellow"
+    if ($null -ne $transcriptField -and $transcriptField.bounds -match '\[(\d+),(\d+)\]\[(\d+),(\d+)\]') {
+        Tap-Xy ([int](([int]$Matches[1]+[int]$Matches[3])/2)) ([int](([int]$Matches[2]+[int]$Matches[4])/2))
+        Start-Sleep -Milliseconds 500
+        Adb shell input text "hello" | Out-Null
+        Start-Sleep -Milliseconds 500
+        Log "Typed 'hello' into transcript field" "Yellow"
+    } else {
+        Log "SKIP translate step: transcript field not found (contentDescription mismatch?)" "Yellow"
+    }
+}
+$transBtn = Tap-Element "contains(@text,'(English)')" "Translate (English) button"
+if ($transBtn) {
+    Start-Sleep -Seconds 3
+    $ui = Get-Ui
+    $translationCard  = $ui.SelectSingleNode("//node[contains(@text,'Translation (English)')]")
+    $translationError = $ui.SelectSingleNode("//node[contains(@text,'GCP_STT_API_KEY') or contains(@text,'Translation API error') or contains(@text,'Translation failed')]")
+    $genericError     = $ui.SelectSingleNode("//node[contains(@text,'Error:')]")
+    if ($translationCard) {
+        Log "Translate: translation card returned (API key is set and service responded)" "Green"
+    } elseif ($translationError -or $genericError) {
+        Log "Translate: error card shown (missing/invalid key in CI -- expected)" "Green"
+    } else {
+        Fail "Translate: neither translation card nor error card appeared after tapping Translate (English)"
+    }
+    Save-Shot "translate-result"
+}
+Log ""
+
+# --- 10. crash check ----------------------------------------------------------
 Log "Scanning logcat for crashes..."
 $crashes = Adb logcat -d | Select-String -Pattern "FATAL EXCEPTION|E AndroidRuntime"
 if ($crashes) {

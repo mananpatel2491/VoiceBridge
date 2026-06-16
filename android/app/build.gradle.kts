@@ -20,8 +20,8 @@ android {
         applicationId = "com.mananpatel.voicebridge"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.0.3"
+        versionCode = 4
+        versionName = "0.0.4"
 
         // Inject STT API key at build time; falls back to "" if not set in local.properties.
         // The app surfaces a clear error message when the key is blank.
