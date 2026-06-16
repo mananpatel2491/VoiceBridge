@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceBridge — Architecture Overview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 2rem;
+      min-height: 100vh;
+    }
+    h1 { font-size: 2rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.25rem; }
+    .tagline { color: #94a3b8; margin-bottom: 2.5rem; font-size: 1rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      padding: 1.25rem 1.5rem;
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; color: #7dd3fc; margin-bottom: 0.5rem; }
+    .card .label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; margin-bottom: 0.25rem; }
+    .card p { font-size: 0.875rem; color: #94a3b8; line-height: 1.5; }
+    .card code { background: #0f172a; color: #86efac; padding: 0.1em 0.4em; border-radius: 0.25rem; font-size: 0.8rem; }
+    .pipeline {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    .pipeline h2 { font-size: 1.1rem; font-weight: 600; color: #f8fafc; margin-bottom: 1.25rem; }
+    .stages { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .stage {
+      background: #0f172a;
+      border: 1px solid #4f46e5;
+      border-radius: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      color: #a5b4fc;
+      font-weight: 500;
+    }
+    .arrow { color: #475569; font-size: 1.25rem; }
+    .workflow {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+    }
+    .workflow h2 { font-size: 1.1rem; font-weight: 600; color: #f8fafc; margin-bottom: 1rem; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+    .step { display: flex; gap: 0.75rem; align-items: flex-start; }
+    .step-num {
+      background: #4f46e5;
+      color: #fff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step p { font-size: 0.875rem; color: #94a3b8; line-height: 1.4; }
+    .step strong { color: #e2e8f0; }
+    footer { margin-top: 2.5rem; font-size: 0.75rem; color: #475569; text-align: center; }
+  </style>
+</head>
+<body>
+  <h1>VoiceBridge</h1>
+  <p class="tagline">Voice AI Pipeline Framework — Constitution-driven, agent-executed development</p>
+
+  <!-- Core Pipeline -->
+  <div class="pipeline">
+    <h2>Core Voice Pipeline</h2>
+    <div class="stages">
+      <div class="stage">🎤 Audio Capture</div>
+      <span class="arrow">→</span>
+      <div class="stage">📝 STT</div>
+      <span class="arrow">→</span>
+      <div class="stage">🧠 LLM Processing</div>
+      <span class="arrow">→</span>
+      <div class="stage">🔊 TTS</div>
+      <span class="arrow">→</span>
+      <div class="stage">🔈 Audio Output</div>
+    </div>
+  </div>
+
+  <!-- Director Layer Cards -->
+  <div class="grid">
+    <div class="card">
+      <div class="label">Constitution</div>
+      <h2>GEMINI.md</h2>
+      <p>The central nervous system. Five non-negotiable operating procedures including context-first architecture, pattern reference integrity, and voice pipeline domain rules (streaming-first, provider interfaces, VAD gating).</p>
+    </div>
+    <div class="card">
+      <div class="label">Architecture Map</div>
+      <h2>Project_Structure.md</h2>
+      <p>Functional map of the codebase. Includes a <strong>Pipeline Stage Registry</strong> tracking each stage's provider interface and current implementation. Updated on every file change.</p>
+    </div>
+    <div class="card">
+      <div class="label">Pattern Registry</div>
+      <h2>PATTERNS.md</h2>
+      <p>Established engineering decisions. Voice-specific patterns: <code>Provider Interface</code>, <code>Streaming-First</code>, <code>VAD Gating</code>, <code>Audio Format Contract</code>, and <code>Latency Budget Tracking</code>.</p>
+    </div>
+    <div class="card">
+      <div class="label">Agentic Skills</div>
+      <h2>scripts/</h2>
+      <p><code>verify_structure.py</code> — changelog hygiene<br/><code>optimize_changelog.py</code> — LLM consolidation<br/><code>generate_bootstrap_prompt.py</code> — session planning<br/><code>update_getting_started.py</code> — doc refresh</p>
+    </div>
+    <div class="card">
+      <div class="label">Contract Testing</div>
+      <h2>bruno/</h2>
+      <p>Bruno collections for pipeline endpoints (stream, transcribe, synthesize, health). No backend feature ships without passing Bruno validation. Latency assertions enforced on hot-path routes.</p>
+    </div>
+    <div class="card">
+      <div class="label">Infrastructure</div>
+      <h2>terraform/</h2>
+      <p>GCP infrastructure as code. Cost review required before tagging — voice APIs bill per-second/per-character. Deployment triggers automatically on GitHub tag.</p>
+    </div>
+  </div>
+
+  <!-- Vibe Coding Workflow -->
+  <div class="workflow">
+    <h2>Vibe Coding Workflow</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <p><strong>Generate Plan</strong><br/>Run <code>generate_bootstrap_prompt.py "intent"</code> to synthesize a structured session prompt from your English description.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <p><strong>Start Session</strong><br/>Copy the generated prompt from <code>bootstrap_prompts/</code> into a new Gemini session.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <p><strong>Execute</strong><br/>Lead Agent implements following Standing Instructions: read constitution, update changelog, run Bruno before commit.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <p><strong>Maintain</strong><br/>Run <code>verify_structure.py</code> and <code>optimize_changelog.py</code> after every feature to prevent context rot.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>VoiceBridge &mdash; Copyright &copy; 2026 Manan Patel &mdash; MIT License</footer>
+</body>
+</html>
