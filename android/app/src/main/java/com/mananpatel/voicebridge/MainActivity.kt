@@ -13,6 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -53,7 +55,6 @@ fun VoiceBridgeScreen(
         permissionDenied = !granted
     }
 
-    // Request mic permission on first composition
     LaunchedEffect(Unit) {
         permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     }
@@ -68,7 +69,6 @@ fun VoiceBridgeScreen(
     ) {
         Text("VoiceBridge", style = MaterialTheme.typography.headlineMedium)
 
-        // Permission denied banner
         if (permissionDenied) {
             Card(
                 colors = CardDefaults.cardColors(
@@ -77,21 +77,19 @@ fun VoiceBridgeScreen(
             ) {
                 Text(
                     text = "Microphone permission denied.\n" +
-                            "Go to Settings → Apps → VoiceBridge → Permissions to enable it.",
+                            "Go to Settings > Apps > VoiceBridge > Permissions to enable it.",
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
             }
         }
 
-        // Status line
         Text(
             text = state.statusMessage,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.secondary,
         )
 
-        // Error card
         state.errorMessage?.let { error ->
             Card(
                 colors = CardDefaults.cardColors(
@@ -109,7 +107,7 @@ fun VoiceBridgeScreen(
 
         Spacer(Modifier.height(4.dp))
 
-        // ── Chunk 0: Record / Stop / Play ────────────────────────────────
+        // -- Chunk 0: Record / Stop / Play ------------------------------------
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
                 onClick = { vm.startRecording(recordingFile) },
@@ -129,11 +127,12 @@ fun VoiceBridgeScreen(
 
         HorizontalDivider()
 
-        // ── Chunk 1: Transcribe ──────────────────────────────────────────
+        // -- Chunk 1: Transcribe ---------------------------------------------
         Button(
             onClick = { vm.transcribe(recordingFile, apiKey) },
             enabled = state.hasRecording
                     && !state.isTranscribing
+                    && !state.isTranslating
                     && state.recordingState != RecordingState.RECORDING,
         ) {
             if (state.isTranscribing) {
@@ -143,20 +142,55 @@ fun VoiceBridgeScreen(
                     color = MaterialTheme.colorScheme.onPrimary,
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Transcribing…")
+                Text("Transcribing...")
             } else {
                 Text("Transcribe (Gujarati)")
             }
         }
 
-        // Transcript display
-        if (state.transcript.isNotEmpty()) {
+        // Editable transcript field — filled by STT or typed directly.
+        // Cleared on new recording; translation clears when this field changes.
+        OutlinedTextField(
+            value = state.transcript,
+            onValueChange = { vm.onTranscriptEdited(it) },
+            label = { Text("Gujarati transcript") },
+            placeholder = { Text("Transcription appears here, or type directly to test translation") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = "transcript-field" },
+            minLines = 3,
+            enabled = !state.isTranscribing && !state.isTranslating,
+        )
+
+        HorizontalDivider()
+
+        // -- Chunk 2: Translate ----------------------------------------------
+        Button(
+            onClick = { vm.translate(apiKey) },
+            enabled = state.transcript.isNotBlank()
+                    && !state.isTranslating
+                    && !state.isTranscribing,
+        ) {
+            if (state.isTranslating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text("Translating...")
+            } else {
+                Text("Translate (English)")
+            }
+        }
+
+        if (state.translatedText.isNotEmpty()) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Transcript", style = MaterialTheme.typography.labelMedium)
+                    Text("Translation (English)", style = MaterialTheme.typography.labelMedium)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = state.transcript,
+                        text = state.translatedText,
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }

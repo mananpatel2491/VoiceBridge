@@ -15,6 +15,8 @@ data class UiState(
     val hasRecording: Boolean = false,
     val isTranscribing: Boolean = false,
     val transcript: String = "",
+    val isTranslating: Boolean = false,
+    val translatedText: String = "",
     val statusMessage: String = "Tap Record to begin.",
     val errorMessage: String? = null,
 )
@@ -33,8 +35,9 @@ class MainViewModel : ViewModel() {
             _uiState.update {
                 it.copy(
                     recordingState = RecordingState.RECORDING,
-                    statusMessage = "Recording… tap Stop when done.",
+                    statusMessage = "Recording... tap Stop when done.",
                     transcript = "",
+                    translatedText = "",
                     errorMessage = null,
                 )
             }
@@ -49,7 +52,7 @@ class MainViewModel : ViewModel() {
             it.copy(
                 recordingState = RecordingState.STOPPED,
                 hasRecording = true,
-                statusMessage = "Recording saved. Tap Play or Transcribe.",
+                statusMessage = "Recording saved. Tap Play, Transcribe, or type directly.",
             )
         }
     }
@@ -64,7 +67,7 @@ class MainViewModel : ViewModel() {
                 _uiState.update { it.copy(statusMessage = "Playback error.", errorMessage = msg) }
             },
         )
-        _uiState.update { it.copy(statusMessage = "Playing…", errorMessage = null) }
+        _uiState.update { it.copy(statusMessage = "Playing...", errorMessage = null) }
     }
 
     fun transcribe(file: File, apiKey: String) {
@@ -78,8 +81,9 @@ class MainViewModel : ViewModel() {
             it.copy(
                 isTranscribing = true,
                 transcript = "",
+                translatedText = "",
                 errorMessage = null,
-                statusMessage = "Sending to GCP Speech-to-Text…",
+                statusMessage = "Sending to GCP Speech-to-Text...",
             )
         }
         viewModelScope.launch {
@@ -99,6 +103,47 @@ class MainViewModel : ViewModel() {
                             isTranscribing = false,
                             errorMessage = e.message,
                             statusMessage = "Transcription failed.",
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    // Called when the user edits the transcript field directly.
+    // Clears the translation so stale output doesn't show for the new text.
+    fun onTranscriptEdited(text: String) {
+        _uiState.update { it.copy(transcript = text, translatedText = "") }
+    }
+
+    fun translate(apiKey: String) {
+        val text = _uiState.value.transcript.trim()
+        if (text.isEmpty()) return
+        _uiState.update {
+            it.copy(
+                isTranslating = true,
+                translatedText = "",
+                errorMessage = null,
+                statusMessage = "Sending to GCP Cloud Translation...",
+            )
+        }
+        viewModelScope.launch {
+            TranslationService.translate(text, apiKey).fold(
+                onSuccess = { translated ->
+                    _uiState.update {
+                        it.copy(
+                            isTranslating = false,
+                            translatedText = translated,
+                            statusMessage = "Translation complete.",
+                        )
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(
+                            isTranslating = false,
+                            errorMessage = e.message,
+                            statusMessage = "Translation failed.",
                         )
                     }
                 },
