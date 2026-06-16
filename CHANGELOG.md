@@ -10,6 +10,29 @@ hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
 
 ## [Unreleased]
 
+## [0.0.4] - 2026-06-15
+### Added
+- **Chunk 2 -- Translation**: `TranslationService.kt` calls Google Cloud Translation API v2
+  (`gu` -> `en`); same GCP project and `GCP_STT_API_KEY` as Chunk 1 STT -- just enable
+  the Cloud Translation API in the same project, no new credentials
+- `Translate (English)` button in the UI; enabled when transcript field is non-empty
+- Transcript card replaced with an editable `OutlinedTextField` -- fills from STT,
+  but user can also type or edit directly before translating
+- Translation result displayed in a card below the Translate button
+- Translation state cleared when transcript field is edited (no stale results)
+### Changed
+- `MainViewModel`: added `isTranslating`, `translatedText`, `onTranscriptEdited()`,
+  `translate()` actions; `startRecording()` now also clears `translatedText`
+- Smoke test (`android/scripts/smoke-test.ps1`): added translate flow step -- types
+  "hello" into the transcript field if STT produced no text (CI without key), taps
+  Translate, asserts translation card or error card appears; initial Translate disabled
+  state also verified
+### Decisions
+- Translation: Google Cloud Translation API v2 (same provider/key as Chunk 1 STT; explicit
+  Gujarati support; 500K chars/month free tier; no new credentials)
+- Rejected DeepL (no Gujarati), Azure Translator (separate provider/key), OpenAI (no
+  natural pairing with GCP STT)
+
 ## [0.0.3] - 2026-06-15
 ### Added
 - Smoke test (`android/scripts/smoke-test.ps1`): build, emulator, UIAutomator-driven
