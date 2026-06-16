@@ -41,8 +41,8 @@
   # Use an already-built APK (faster on re-runs)
   powershell -File android/scripts/smoke-test.ps1
 
-  # Full release flow: smoke test + auto-merge to main (called by post-commit hook)
-  powershell -File android/scripts/smoke-test.ps1 -AutoMerge
+  # Full release flow: build + smoke test + auto-merge (called by post-commit hook on CHANGELOG update)
+  powershell -File android/scripts/smoke-test.ps1 -Build -AutoMerge
 #>
 param(
     [switch] $Build,
