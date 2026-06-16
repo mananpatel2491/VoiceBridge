@@ -1,0 +1,43 @@
+#!/bin/sh
+# Source: android/scripts/hooks/post-commit
+# Installed to .git/hooks/post-commit by: powershell -File android/scripts/install-hooks.ps1
+# ASCII-only: Git for Windows runs this as sh (not bash); keep this file LF-only.
+#
+# Behavior on version branches (v*.*.*):
+#   Every commit    -> runs smoke test (build gate + structure check + emulator UI drive)
+#   Commit that updates CHANGELOG.md -> smoke test + auto-merge to main + push both branches
+#
+# On any other branch: exits immediately (no-op).
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+# Only act on version branches (vX.Y.Z)
+if ! echo "$BRANCH" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+    exit 0
+fi
+
+echo ""
+echo ">>> [post-commit] Version branch: $BRANCH"
+
+# Check if CHANGELOG.md was modified in this commit.
+# Auto-merge fires only when CHANGELOG.md is updated (the signal that this version is complete).
+CHANGELOG_LINES=$(git show --name-only HEAD -- CHANGELOG.md 2>/dev/null | grep -c "CHANGELOG.md" || true)
+
+if [ "$CHANGELOG_LINES" -eq 0 ]; then
+    echo ">>> [post-commit] Intermediate commit (CHANGELOG.md not updated) -- smoke test only, no merge."
+    powershell.exe -ExecutionPolicy Bypass -NonInteractive \
+        -File "android/scripts/smoke-test.ps1"
+    EXIT=$?
+else
+    echo ">>> [post-commit] CHANGELOG.md updated -- smoke test + auto-merge to main..."
+    powershell.exe -ExecutionPolicy Bypass -NonInteractive \
+        -File "android/scripts/smoke-test.ps1" -AutoMerge
+    EXIT=$?
+    if [ $EXIT -eq 0 ]; then
+        echo ">>> [post-commit] SUCCESS: $BRANCH merged to main and pushed to origin."
+    else
+        echo ">>> [post-commit] SMOKE TEST FAILED -- staying on $BRANCH. Fix issues and recommit."
+    fi
+fi
+
+exit $EXIT

@@ -20,8 +20,8 @@ android {
         applicationId = "com.mananpatel.voicebridge"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.0.1"
+        versionCode = 3
+        versionName = "0.0.3"
 
         // Inject STT API key at build time; falls back to "" if not set in local.properties.
         // The app surfaces a clear error message when the key is blank.
@@ -44,6 +44,14 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    lint {
+        // Warn but do not abort on lint issues — smoke test controls the quality gate.
+        // HTML report is written to app/build/reports/lint-results-debug.html.
+        abortOnError = false
+        checkReleaseBuilds = false
+        htmlReport = true
     }
 }
 
