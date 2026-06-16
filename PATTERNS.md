@@ -26,6 +26,22 @@ This document records established engineering patterns and design decisions to e
 *   **CLI Argument Parsing**: Use the standard `argparse` library for all scripts to provide a consistent interface for flags and help menus.
 *   **Async-First**: Voice pipeline components that perform I/O (network, audio device) must use `asyncio`. Synchronous calls in an async context require explicit justification in the code.
 
-## 4. Tooling Conventions
+## 4. Git Workflow
+
+*   **Version Branches**: All feature work is done on a branch named `vX.Y.Z` matching the version being built. Never commit directly to `main`.
+*   **Auto-Merge Signal**: Updating `CHANGELOG.md` in a commit is the signal that a version is complete. The post-commit hook (installed by `android/scripts/install-hooks.ps1`) runs the smoke test and, if it passes, auto-merges the branch to `main` and pushes both branches to `origin`.
+*   **Intermediate Commits**: Commits on a `vX.Y.Z` branch that do NOT update `CHANGELOG.md` run the smoke test only — no merge fires. Use these freely for in-progress work.
+*   **Install Hooks on Clone**: The `.git/hooks/` directory is not tracked. After every fresh clone, run `powershell -File android/scripts/install-hooks.ps1` to re-install the post-commit hook.
+*   **Commit Message Convention**: `feat:` for new features, `fix:` for bug fixes, `chore:` for maintenance (CHANGELOG update, dependency bump). The version-release commit that triggers auto-merge uses `chore: vX.Y.Z`.
+
+## 5. Smoke Test
+
+*   **Single Command Gate**: `powershell -File android/scripts/smoke-test.ps1 -Build` must pass before any version is considered shippable. The script is the authoritative definition of "done" for a version.
+*   **Emulator-Driven, Not Pixel-Based**: Element taps are resolved from a live `uiautomator dump` by `@text` or `@content-desc` — never hardcoded coordinates. This survives layout shifts and resolution changes. KEEP SELECTORS IN SYNC with `MainActivity.kt` label strings whenever buttons are renamed or screens are added.
+*   **Screenshot Archive**: Each test step saves a timestamped screenshot to `android/app/build/smoke-<timestamp>/` (gitignored). These are the primary debugging artifact for failed runs.
+*   **Crash Gate**: Logcat is scanned for `FATAL EXCEPTION` / `E AndroidRuntime` after every UI step. Any crash fails the test unconditionally.
+*   **Transcribe Without a Key**: The smoke test taps Transcribe without a real API key and asserts that an error card appears (not a crash). This verifies Chunk 1 error surfacing in CI without needing a live credential.
+
+## 6. Tooling Conventions
 
 *   **Dry-Run Safety**: Destructive or file-writing operations should be gated behind a check for a `dry_run` flag, printing the intended action to `stdout` instead of executing it.
