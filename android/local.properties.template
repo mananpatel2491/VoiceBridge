@@ -1,0 +1,13 @@
+# Copy this file to local.properties (which is gitignored) and fill in your values.
+# local.properties is NEVER committed — it contains machine-specific paths and secrets.
+
+# Path to your Android SDK (update to match your machine)
+# Windows example:
+sdk.dir=C\:\\Android
+# Linux / ChromeOS Crostini example:
+# sdk.dir=/home/your-user/Android/Sdk
+
+# ── Chunk 1: Google Cloud Speech-to-Text ────────────────────────────────────
+# Create a GCP project, enable the Speech-to-Text API, and create an API key
+# (Credentials → API key). Paste it below.
+GCP_STT_API_KEY=your_api_key_here

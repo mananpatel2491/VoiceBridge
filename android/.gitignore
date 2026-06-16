@@ -1,0 +1,21 @@
+# Local configuration — contains SDK path and API keys; never commit
+local.properties
+
+# Build outputs
+.gradle/
+build/
+app/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.iws
+
+# Keystore files
+*.jks
+*.keystore
+!debug.keystore
+
+# OS artifacts
+.DS_Store
+Thumbs.db

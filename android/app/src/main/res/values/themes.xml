@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Minimal theme for a Compose-only app: removes the system ActionBar so
+        Compose Scaffold can own the entire window. Uses the built-in Material
+        Light theme as parent — no extra View-based Material dependency needed.
+    -->
+    <style name="Theme.VoiceBridge" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
