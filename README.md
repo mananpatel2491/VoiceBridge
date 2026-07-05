@@ -164,7 +164,13 @@ The key is injected at build time via `BuildConfig.GCP_STT_API_KEY` — it is NO
 
 ## Agentic Development Framework
 
-This repo uses the **Agentic Vibe Fleet** methodology — see `GEMINI.md` (constitution) and `PATTERNS.md` (pattern registry). To plan the next chunk:
+This repo uses the **Agentic Vibe Fleet** methodology — see `GEMINI.md` (constitution) and `PATTERNS.md` (pattern registry).
+
+### Spec-Driven Development (GitHub Spec Kit)
+
+Every feature beyond a trivial fix runs the [Spec Kit](https://github.com/github/spec-kit) chain — **specify → clarify → plan → tasks → implement** (Claude Code: `/speckit-specify` …; Gemini CLI: `/speckit.specify` …) — producing durable planning artifacts in `specs/NNN-feature/`. This is the concrete implementation of the framework's 80/20 planning-first methodology. Governing principles live in `.specify/memory/constitution.md`, a distillation of `GEMINI.md` (which always wins on conflict).
+
+To plan the next chunk:
 
 ```bash
 python ./scripts/generate_bootstrap_prompt.py "Add Gujarati-to-English translation using the Cloud Translation API"

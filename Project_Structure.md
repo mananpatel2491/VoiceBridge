@@ -15,6 +15,10 @@ This document provides a functional map of the codebase, enabling the Lead Agent
 | `bruno/` | **API Validation**: Bruno collections and documentation for contract testing. |
 | `bootstrap_prompts/` | **Plan Archive**: Systematic prompts generated from user intent to start new sessions. |
 | `terraform/` | **Infrastructure-as-Code**: GCP/Terraform configuration for cost-gated deployments. |
+| `.specify/` | **Spec Kit Core**: GitHub Spec Kit toolkit — constitution distillation (`memory/constitution.md`), spec/plan/tasks templates, PowerShell helpers, workflow registry. |
+| `specs/` | **Feature Specs**: Durable per-feature artifacts (`NNN-feature/spec.md`, `plan.md`, `tasks.md`) produced by the Spec Kit chain. (Created on first `/speckit-specify` run.) |
+| `.claude/` | **Claude Code Integration**: Spec Kit skills (`/speckit-*` dash-form commands) for Claude Code sessions. |
+| `.gemini/` | **Gemini CLI Integration**: Spec Kit commands (`/speckit.*` dot-form TOML) for Gemini CLI sessions. |
 
 ## Application Layer
 
@@ -66,3 +70,4 @@ This document provides a functional map of the codebase, enabling the Lead Agent
 | 2026-06-15 | UPDATE | `android/app/build.gradle.kts`, `PATTERNS.md`, `Project_Structure.md` | Added lint{} block (abortOnError=false, HTML report); added Git Workflow and Smoke Test patterns; updated architecture map with new files. |
 | 2026-06-15 | ADD | `android/app/src/main/java/com/mananpatel/voicebridge/TranslationService.kt` | **V0.0.4 Chunk 2**: GCP Cloud Translation v2 REST client (`gu`→`en`); same GCP project/key as STT; editable transcript field in UI; Translate (English) button; translation result card; smoke test translate step. |
 | 2026-06-15 | UPDATE | `android/app/src/main/java/com/mananpatel/voicebridge/MainViewModel.kt`, `android/app/src/main/java/com/mananpatel/voicebridge/MainActivity.kt`, `android/app/build.gradle.kts`, `android/scripts/smoke-test.ps1`, `CHANGELOG.md` | v0.0.4: translation state + actions in ViewModel; editable OutlinedTextField + Translate button + translation card in UI; version bump; smoke test translate flow. |
+| 2026-07-05 | ADD | `.specify/`, `.claude/`, `.gemini/`, `GEMINI.md`, `PATTERNS.md`, `Project_Structure.md`, `README.md`, `scripts/verify_structure.py` | **v0.0.5 — GitHub Spec Kit adoption (dev tooling, $0/mo).** Initialized Spec Kit (Specify CLI v0.12.5) with Claude Code (skills, `/speckit-*`) and Gemini CLI (commands, `/speckit.*`) integrations. Seeded `.specify/memory/constitution.md` as a distillation of GEMINI.md + PATTERNS.md (GEMINI.md remains supreme). Codified the Spec-Driven Feature Workflow: the specify→clarify→plan→tasks→implement chain is the concrete implementation of the 80/20 planning phase, with durable artifacts in `specs/NNN-*/`. Tooling-only change — no infra, no cost. Also fixed `verify_structure.py` to skip gitignored local Android build outputs (`android/.gradle/`, `android/app/build/`, `android/local.properties`) so the gate passes on machines with local builds. |
