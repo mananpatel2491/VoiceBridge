@@ -13,6 +13,8 @@ This document records established engineering patterns and design decisions to e
 *   **Production Readiness Gating**: Code containing comments indicating temporary setups, mocks, or non-production quality (e.g., `// TODO: temp`, `// fix later`) must be flagged. The agent must explicitly ask the Director if these should be addressed before proceeding.
 *   **Infrastructure Migration Advisory**: When transitioning from local/mock implementations to production-ready infrastructure, the agent must present a comparative selection of technology options and seek the Director's arbitration before implementation.
 
+*   **Spec-Driven Feature Workflow (Spec Kit)**: Features beyond trivial fixes run the GitHub Spec Kit chain (`specify → clarify → plan → tasks → implement`), producing durable artifacts in `specs/NNN-*/`. The Spec Kit constitution (`.specify/memory/constitution.md`) is always a *distillation* of the repo's own constitution (`GEMINI.md`) + `PATTERNS.md` with an explicit precedence header — it never introduces new rules. On conflict, GEMINI.md wins.
+
 ## 2. Voice Pipeline Patterns
 
 *   **Provider Interface Pattern**: Each pipeline stage (STT, LLM, TTS) must be implemented behind an abstract provider interface. Concrete implementations (e.g., `WhisperSTT`, `GeminiLLM`, `ElevenLabsTTS`) are injected at runtime. Never call a vendor SDK directly from business logic.

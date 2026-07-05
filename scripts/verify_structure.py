@@ -61,6 +61,18 @@ def verify(dry_run=False):
                 or "docs" in rel_path.parts
             ):
                 continue
+            # Spec Kit toolkit payload and its per-feature artifacts are mapped at
+            # directory level in Project_Structure.md, not file-by-file
+            if rel_path.parts[0] in (".specify", ".claude", ".gemini", "specs"):
+                continue
+            # Gitignored local Android build outputs are never logged in the changelog
+            posix = rel_path.as_posix()
+            if (
+                posix.startswith("android/.gradle/")
+                or posix.startswith("android/app/build/")
+                or posix == "android/local.properties"
+            ):
+                continue
             actual_files.append(str(rel_path.as_posix()))
 
     missing = [f for f in actual_files if str(f) not in logged_files]
