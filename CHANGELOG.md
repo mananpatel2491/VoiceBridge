@@ -10,6 +10,14 @@ hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
 
 ## [Unreleased]
 
+## [0.0.6] - 2026-07-05
+### Added
+- **retro-spec conversion**: as-built Spec Kit sets for delivered capabilities
+  under `specs/001-*` … `specs/005-*` (agentic framework governance, voice capture &
+  playback, Gujarati STT, Gujarati→English translation, release gate automation) —
+  each with spec/plan/research/data-model/quickstart/tasks/contracts, grounded in
+  code with `path:line` citations; docs only (no app code changes, no infra, $0/mo)
+
 ## [0.0.4] - 2026-06-15
 ### Added
 - **Chunk 2 -- Translation**: `TranslationService.kt` calls Google Cloud Translation API v2
