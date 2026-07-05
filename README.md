@@ -84,20 +84,13 @@ VoiceBridge/
 - JDK 17
 - A physical Android phone (API 24+) with USB debugging on
 
-### 1. Copy the Gradle wrapper from Saraswati
+### 1. Gradle wrapper (already committed)
 
-The `gradle-wrapper.jar` binary is not committed. Run once to bootstrap:
+The Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`,
+`gradle/wrapper/gradle-wrapper.properties`) **is committed** — no bootstrap step is
+needed after cloning. The wrapper pins Gradle 9.3.1.
 
-```powershell
-$src = "C:\Docs\Build\mananUtils\saraswati"
-$dst = "C:\Docs\Build\mananUtils\VoiceBridge\android"
-Copy-Item "$src\gradlew"     "$dst\gradlew"
-Copy-Item "$src\gradlew.bat" "$dst\gradlew.bat"
-Copy-Item "$src\gradle\wrapper\gradle-wrapper.jar" `
-          "$dst\gradle\wrapper\gradle-wrapper.jar"
-```
-
-*(If you don't have Saraswati locally, run `gradle wrapper --gradle-version=9.3.1` from `android/` instead — requires Gradle on your PATH.)*
+*(Only if the wrapper is ever missing or corrupted: run `gradle wrapper --gradle-version=9.3.1` from `android/` — requires Gradle on your PATH.)*
 
 ### 2. Create `android/local.properties`
 

@@ -46,10 +46,10 @@ As-built record — reconstructed 2026-07-05 from v0.0.3 (commit 93d1549) and ho
 
 ## Open follow-ups (genuinely pending)
 
-- [ ] T015 `CHANGELOG.md` has no `[0.0.5]` entry — v0.0.5 (Spec Kit adoption) was released
+- [X] T015 `CHANGELOG.md` had no `[0.0.5]` entry — v0.0.5 (Spec Kit adoption) was released
   and merged manually (commit ba9bce5, message format differs from the hook's
-  `Merge <branch> into main`), bypassing the documented auto-merge signal; changelog entry
-  owed retroactively
+  `Merge <branch> into main`), bypassing the documented auto-merge signal; historical
+  `[0.0.5]` entry added retroactively, with a note marking it as retroactive (v0.0.7)
 - [ ] T016 Smoke test covers only the happy UI walk — no rotation, process-death, or
   permission-revocation scenarios (accepted gap at personal-app scale; record here so it is
   a choice, not an oversight)
