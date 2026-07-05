@@ -48,11 +48,12 @@ As-built record — reconstructed 2026-07-05 from v0.0.1 (commit 1c056d4) and v0
 
 ## Open follow-ups (genuinely pending)
 
-- [ ] T017 `GEMINI_Getting_Started.md` is mapped in `Project_Structure.md:12` but the file has
-  never been generated (`scripts/update_getting_started.py` exists, unused so far)
-- [ ] T018 `Function_Mapping.md:7-10` rows are illustrative placeholders (no backend endpoints
-  exist); replace with real rows when the first backend/API ships, per its own maintenance
-  rules
+- [X] T017 `GEMINI_Getting_Started.md` was mapped in `Project_Structure.md:12` but the file was
+  never generated — ghost map row removed (also removed the ghost `bootstrap_prompts/` row;
+  re-add a map row if/when `scripts/update_getting_started.py` is first run) (v0.0.7)
+- [X] T018 `Function_Mapping.md` placeholder rows annotated as reserved-for-future-backend
+  (status note + per-row "reserved (N/A today)" markers; file kept, not deleted) — replace
+  with real rows when the first backend/API ships, per its own maintenance rules (v0.0.7)
 - [ ] T019 Populate `bruno/collections/` with real collections when the first backend API
   ships (Bruno gate currently has nothing to validate)
 - [ ] T020 Populate `terraform/environments|modules/` when the first infra-dependent feature

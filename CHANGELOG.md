@@ -10,6 +10,16 @@ hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-07-05
+### Fixed
+- **Docs drift fixes (docs only)**: added the missing historical `[0.0.5]` changelog
+  entry (release shipped without one — see 005-release-gate-automation T015);
+  `README.md` no longer claims the Gradle wrapper is uncommitted (wrapper jar +
+  `gradlew` scripts ARE tracked — copy-from-Saraswati bootstrap instruction removed);
+  `Project_Structure.md` ghost map rows removed (`GEMINI_Getting_Started.md`,
+  `bootstrap_prompts/` — neither file/dir exists); `Function_Mapping.md` placeholder
+  backend rows annotated as reserved-for-future-backend. No app code changes, $0/mo.
+
 ## [0.0.6] - 2026-07-05
 ### Added
 - **retro-spec conversion**: as-built Spec Kit sets for delivered capabilities
@@ -17,6 +27,26 @@ hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
   playback, Gujarati STT, Gujarati→English translation, release gate automation) —
   each with spec/plan/research/data-model/quickstart/tasks/contracts, grounded in
   code with `path:line` citations; docs only (no app code changes, no infra, $0/mo)
+
+## [0.0.5] - 2026-07-05
+### Added
+- **GitHub Spec Kit adoption (dev tooling, $0/mo)**: initialized Spec Kit (Specify CLI
+  v0.12.5) with Claude Code (`/speckit-*` skills) and Gemini CLI (`/speckit.*` TOML
+  commands) integrations
+- `.specify/memory/constitution.md` seeded as a distillation of `GEMINI.md` +
+  `PATTERNS.md` ("VoiceBridge Constitution"); GEMINI.md remains the constitution of
+  record and wins on any conflict
+- `GEMINI.md`: Spec-Driven Feature Workflow section (specify → clarify → plan → tasks
+  → implement as the concrete 80/20 planning phase; durable artifacts in `specs/NNN-*/`)
+- `PATTERNS.md`: Spec Kit distillation pattern bullet; `Project_Structure.md`: map rows
+  for `.specify/`, `specs/`, `.claude/`, `.gemini/`; `README.md`: Spec-Driven
+  Development note in the methodology section
+### Changed
+- `scripts/verify_structure.py`: exclude Spec Kit dirs (mapped at directory level) and
+  gitignored local Android build outputs; gate green (exit 0)
+### Note
+- *Entry added retroactively in v0.0.7 — the v0.0.5 release (commit 9fdd075) was merged
+  manually without a changelog entry, bypassing the documented auto-merge signal.*
 
 ## [0.0.4] - 2026-06-15
 ### Added
