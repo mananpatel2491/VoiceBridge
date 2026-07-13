@@ -205,6 +205,45 @@ fighting the recorded architecture rationale — flag it explicitly if you propo
 
 ---
 
+## INC-6 — Unbuildable HEAD + gate asserting on the wrong node (v0.0.8 release, double red)
+
+- **Date**: 2026-07-13 (discovered when the v0.0.8 release commit ran the gate).
+- **Observed**: two independent reds blocking one release. (a) The first gate run
+  (working tree WITH the then-uncommitted AGP migration edits) built fine but failed 4
+  enabled-state assertions — the UIAutomator dump reported `enabled=true` for buttons
+  that were *visually greyed out* (screenshot-verified). (b) The discriminating re-run
+  on a CLEAN tree (migration edits stashed) failed earlier and harder: `assembleDebug`
+  died in configuration with `Cannot add extension with name 'kotlin'` — i.e. the
+  COMMITTED config had been unbuildable since at least 2026-07-05.
+- **Root causes**: (a) Compose buttons dump as a clickable parent `android.view.View`
+  carrying the REAL enabled state, wrapping a non-clickable `TextView` child that
+  carries the text and always reports `enabled=true`; `Assert-Enabled` located nodes BY
+  TEXT and read the child's flag. (b) AGP 9.1.1's built-in Kotlin registers the
+  `kotlin` Gradle extension, so also applying the standalone
+  `org.jetbrains.kotlin.android` plugin is a hard conflict. The migration fix was made
+  in the working tree during the 2026-07-05 red-gate repair but never committed —
+  every green build since then silently depended on dirty files.
+- **Evidence**: gate run logs of 2026-07-13 (4× `expected enabled=False, got
+  enabled=True`, then `BUILD FAILED ... Cannot add extension with name 'kotlin'`);
+  screenshot `02_initial-state.png` showing correctly-disabled buttons; manual
+  `uiautomator dump` showing Stop's clickable parent with `enabled=false` while its
+  text node read `enabled=true`.
+- **Fix (shipped in v0.0.8)**: committed the migration (standalone Kotlin Android
+  plugin + `kotlinOptions` removed from both gradle files) and added
+  `Get-EffectiveButtonNode` to the smoke test — enabled state is now resolved from the
+  nearest clickable self-or-ancestor (`android/scripts/smoke-test.ps1`, used by
+  `Assert-Enabled` and the two inline enabled checks). Gate green on the same branch
+  immediately after.
+- **Status**: FIXED.
+- **Lessons encoded**: (1) a fix that lives only in the working tree is a time bomb —
+  HEAD was unbuildable for 8 days while looking green locally (INC-1's cousin: state
+  that bypasses the recorded process WILL drift); (2) when an automated gate contradicts
+  a screenshot, believe the screenshot and interrogate the gate's *measurement*, not
+  just the app; (3) run the discriminating experiment (clean tree vs dirty tree) before
+  assuming which side broke.
+
+---
+
 ## Known open gaps (recorded, NOT incidents — do not "discover" these as new)
 
 From `specs/005-release-gate-automation/tasks.md:53-60` and the Pipeline Stage
@@ -252,8 +291,8 @@ enforced by `scripts/verify_structure.py`). A merge commit whose message does no
 
 Authored 2026-07-13 by skill-distill (repo state at commit 80b756f, v0.0.7 on main).
 All SHAs, line numbers, and quotes verified against the live repo on that date.
-Volatile note (2026-07-13): the working tree had uncommitted `build.gradle.kts` edits
-(AGP 9 built-in-Kotlin migration); nothing above depends on them.
+Update same day: the uncommitted-migration state was itself promoted to INC-6 when it
+blocked the v0.0.8 release; the migration is now committed (v0.0.8).
 
 Re-verification one-liners (run from anywhere):
 

@@ -25,10 +25,18 @@ hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
 - (within the library, pre-release) purged a PowerShell 5.1 trap from 4 authored recipes:
   `adb exec-out ... > file` corrupts binary pulls (UTF-16LE re-encode + BOM, empirically
   verified); all device-file pulls now use the byte-safe two-step `/sdcard` route
+- **AGP 9 built-in-Kotlin migration COMMITTED** (was living uncommitted in the working
+  tree since the 2026-07-05 red-gate repair): standalone `org.jetbrains.kotlin.android`
+  plugin + `kotlinOptions` removed from both `build.gradle.kts` files. The release gate
+  proved committed HEAD unbuildable without it (`Cannot add extension with name
+  'kotlin'`) — incident recorded as skill-library INC-6 (006/T028-T029)
+- **Smoke test enabled-state assertions fixed** (`Get-EffectiveButtonNode`): Compose
+  buttons dump as a clickable parent View (real enabled state) wrapping an
+  always-enabled TextView text child; `Assert-Enabled` + two inline checks now resolve
+  the nearest clickable self-or-ancestor instead of the text node. App was visually
+  correct throughout — the gate was asserting on the wrong node (006/T030)
 ### Note
-- No app code changes. The uncommitted AGP built-in-Kotlin migration in the two
-  `build.gradle.kts` files remains in the working tree by Director decision (tracked as
-  006/T027).
+- No app source (Kotlin) changes; the fixes above are build config + test gate.
 
 ## [0.0.7] - 2026-07-05
 ### Fixed

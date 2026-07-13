@@ -119,12 +119,12 @@ Background: Gradle 9.3.1 wrapper is COMMITTED (android/gradle/wrapper/gradle-wra
 support**, which conflicts with also applying the standalone `org.jetbrains.kotlin.android`
 plugin.
 
-**VOLATILE (state as of 2026-07-13):** the *committed* config (branch `main`, HEAD
-`80b756f`) still applies the standalone plugin — `git show HEAD:android/build.gradle.kts`
-shows `id("org.jetbrains.kotlin.android") version "2.0.21" apply false` and
-`git show HEAD:android/app/build.gradle.kts` applies it. The *working tree* has
-**uncommitted** edits removing that plugin from both files (the AGP 9 built-in-Kotlin
-migration). Do not treat either state as final; check before reasoning.
+**RESOLVED in v0.0.8 (2026-07-13):** the migration is now COMMITTED — both files apply
+only `com.android.application` + `org.jetbrains.kotlin.plugin.compose` (no standalone
+`org.jetbrains.kotlin.android`, no `kotlinOptions` block). The proof that this is the
+only buildable config: a clean-tree build of the PRE-migration config failed with
+`Cannot add extension with name 'kotlin'` (AGP 9.1.1 built-in Kotlin registers the
+`kotlin` extension first). See voicebridge-failure-archaeology INC-6.
 
 - **Symptom:** build fails during plugin application / configuration with a message
   naming `org.jetbrains.kotlin.android`, built-in Kotlin, or a Kotlin-plugin/AGP
@@ -140,11 +140,13 @@ migration). Do not treat either state as final; check before reasoning.
   Select-String -Path .\android\build.gradle.kts -Pattern "kotlin"
   Select-String -Path .\android\gradle\wrapper\gradle-wrapper.properties -Pattern "distributionUrl"
   ```
-  Uncommitted plugin-line deletions = you are in the mid-migration state described above.
-- **Fix:** make the two files internally consistent — either both with the standalone
-  plugin (committed state) or both without (migrated state) — and confirm with a clean
-  `assembleDebug`. Do NOT commit the migration as a drive-by while debugging something
-  else: any commit on a `vX.Y.Z` branch triggers the smoke test via the post-commit hook,
+  Plugin-line REintroductions (someone re-adding `org.jetbrains.kotlin.android`) = a
+  regression to the pre-v0.0.8 broken state.
+- **Fix:** keep the two files internally consistent in the MIGRATED form (no standalone
+  Kotlin Android plugin — the v0.0.8 committed state; the standalone form does not build
+  under AGP 9.1.1) and confirm with a clean `assembleDebug`. Do NOT flip plugin state as
+  a drive-by while debugging something else: any commit on a `vX.Y.Z` branch triggers
+  the smoke test via the post-commit hook,
   and version bumps of build tooling are change-controlled
   (see voicebridge-change-control).
 
@@ -504,8 +506,8 @@ exact Bruno acknowledgment string recorded in PATTERNS.md.
 Authored 2026-07-13 by skill-distill, grounded against branch `main` at commit
 `80b756f` plus the then-current working tree.
 
-**Volatile facts stamped 2026-07-13:** the uncommitted AGP 9 built-in-Kotlin migration
-edits (section 1c); `versionName = "0.0.4"` in android/app/build.gradle.kts:23 (repo
+**Volatile facts stamped 2026-07-13:** the AGP 9 built-in-Kotlin migration was COMMITTED
+in v0.0.8 (section 1c updated accordingly); `versionName = "0.0.4"` in android/app/build.gradle.kts:23 (repo
 history is at v0.0.7 — versionName has not tracked docs-only releases); the OPEN
 Play-vs-header-write race note (6b).
 

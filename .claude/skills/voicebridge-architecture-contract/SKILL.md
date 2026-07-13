@@ -160,10 +160,9 @@ plain REST, free tier 60 min/mo — `README.md:29–35`); GCP Translation v2 ove
 Azure (separate account), OpenAI (cost/indirection) — decisive factor was **credential reuse**
 (`README.md:11–20`). Do not re-litigate these without new evidence (that is GIST debt).
 
-Toolchain of record: AGP 9.1.1 + Kotlin 2.0.21, Gradle 9.3.1 wrapper **committed**.
-(2026-07-13 volatile note: the working tree has uncommitted `build.gradle.kts` edits for the
-AGP-9 built-in-Kotlin migration; the committed config still applies the standalone
-`org.jetbrains.kotlin.android` plugin. Verify before restating — see Provenance.)
+Toolchain of record: AGP 9.1.1 with **built-in Kotlin** (2.0.21; no standalone
+`org.jetbrains.kotlin.android` plugin since v0.0.8 — re-adding it breaks configuration,
+see voicebridge-failure-archaeology INC-6), Gradle 9.3.1 wrapper **committed**.
 
 ## 5. Single-key credential design
 

@@ -16,8 +16,8 @@ all blocking + important findings.
 ## Technical Context
 
 - **Artifact type**: Markdown skills (YAML frontmatter + body) + 2 executable diagnostic
-  scripts. No app code touched — the two `build.gradle.kts` working-tree edits predate this
-  capability and were deliberately left uncommitted.
+  scripts. No app *code* touched; the release did ship two gate-surfaced build/test fixes
+  (gradle plugin migration + smoke-test enabled-state resolution — tasks.md Phase 5).
 - **Consumers**: Claude Code sessions (auto-discovery of in-repo `.claude/skills/`), any
   agent or human reading Markdown.
 - **Script runtimes**: `inspect_wav.py` — Python 3 stdlib only (argparse/json/struct/sys,

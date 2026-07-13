@@ -268,17 +268,13 @@ permission, Record → speak → Stop → Play, hear playback.
    trusting timing-sensitive runs. The smoke test also boots with `-no-snapshot-load
    -no-boot-anim` and polls `sys.boot_completed` for up to ~3 minutes
    (`android/scripts/smoke-test.ps1:192-199`).
-6. **AGP 9 / Kotlin plugin friction (VOLATILE, 2026-07-13)** — the **committed** build
-   config applies the standalone Kotlin Android plugin
-   (`id("org.jetbrains.kotlin.android") version "2.0.21"` in `android/build.gradle.kts`,
-   plus a `kotlinOptions { jvmTarget = "17" }` block in `android/app/build.gradle.kts`).
-   As of 2026-07-13 the working tree carries **uncommitted** edits removing both, per
-   AGP 9's built-in-Kotlin migration. Do NOT state either form as the settled config:
-   check `git status`/`git diff -- android/build.gradle.kts android/app/build.gradle.kts`
-   before reasoning about the plugins block. If a fresh clone (which has only the
-   committed form) throws Kotlin-plugin/AGP compatibility warnings or errors under
-   AGP 9.1.1, this migration is the live context — read the current diff and CHANGELOG
-   before "fixing" anything.
+6. **AGP 9 / Kotlin plugin (settled in v0.0.8, 2026-07-13)** — the committed build config
+   uses AGP 9.1.1's **built-in Kotlin**: no standalone `org.jetbrains.kotlin.android`
+   plugin and no `kotlinOptions` block anywhere. Do NOT re-add the standalone plugin —
+   under AGP 9.1.1 it fails configuration with `Cannot add extension with name 'kotlin'`
+   (empirically proven when the pre-migration config was rebuilt clean on 2026-07-13;
+   see voicebridge-failure-archaeology INC-6). `org.jetbrains.kotlin.plugin.compose`
+   2.0.21 remains applied — that one is required and unrelated.
 7. **Run gradlew from `android/`** — the Gradle project root is `android/`
    (`settings.gradle.kts` lives there). From the repo root, use
    `.\android\gradlew.bat -p android assembleDebug` (the `-p` form is what the smoke

@@ -242,9 +242,9 @@ Release commit (`chore: vX.Y.Z`):
 
 ## Provenance and maintenance
 
-Authored 2026-07-13 by skill-distill (repo state: main at `80b756f`, v0.0.7; volatile —
-working tree had uncommitted `android/build.gradle.kts` + `android/app/build.gradle.kts`
-edits for the AGP 9 built-in-Kotlin migration, not yet a committed fact).
+Authored 2026-07-13 by skill-distill (repo state: main at `80b756f`, v0.0.7). Updated
+same day: the AGP 9 built-in-Kotlin migration was committed in v0.0.8 after it blocked
+the release (voicebridge-failure-archaeology INC-6).
 
 Re-verify before trusting drift-prone claims:
 

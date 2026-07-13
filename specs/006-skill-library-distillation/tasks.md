@@ -52,6 +52,21 @@ As-built record — reconstructed 2026-07-13 from the skill-distill run shipped 
 - [X] T023 Release via the repo's own gate: v0.0.8 branch, `chore: v0.0.8` commit →
   post-commit hook → smoke test → auto-merge + push (v0.0.8)
 
+## Phase 5 — Release-blocking fixes surfaced BY the gate (as-built, same release)
+
+- [X] T028 First gate run failed 4 enabled-state assertions (dump reported
+  `enabled=true` for visually disabled buttons); clean-tree discriminating re-run
+  proved committed HEAD unbuildable (`Cannot add extension with name 'kotlin'`) —
+  incident recorded as voicebridge-failure-archaeology INC-6 (v0.0.8)
+- [X] T029 Committed the AGP 9 built-in-Kotlin migration (standalone
+  `org.jetbrains.kotlin.android` + `kotlinOptions` removed from both gradle files) —
+  the only buildable config under AGP 9.1.1 (v0.0.8)
+- [X] T030 Smoke test: added `Get-EffectiveButtonNode` — `Assert-Enabled` and the two
+  inline enabled checks resolve the nearest clickable self-or-ancestor instead of the
+  text node; intermediate-commit gate run green (v0.0.8)
+- [X] T031 Skill library updated in-place: INC-6 added to failure-archaeology; stale
+  "uncommitted migration" volatile notes settled in 6 skills (v0.0.8)
+
 ## Open follow-ups
 
 - [ ] T024 Regenerate `references/provider-survey-2026-07-13.md` when Chunk 3 actually
@@ -60,5 +75,5 @@ As-built record — reconstructed 2026-07-13 from the skill-distill run shipped 
   with the smoke-test selectors (release-gate-runbook owns the contract table)
 - [ ] T026 When the first backend ships, author a Bruno/backend operations skill and
   activate the dormant Bruno-gate content in voicebridge-change-control
-- [ ] T027 The uncommitted AGP built-in-Kotlin migration (two build.gradle.kts files)
-  remains in the working tree — decide, commit or discard; skills mark it volatile
+- [X] T027 The AGP built-in-Kotlin migration was committed in this release after the
+  gate proved HEAD unbuildable without it (see Phase 5 / INC-6) (v0.0.8)

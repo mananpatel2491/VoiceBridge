@@ -122,8 +122,9 @@ file reports "header-not-written".
 - **Pre-existing `speckit-*` skills**: the library coexists with the 10 Spec Kit skills in
   the same directory; reviewers were scoped to `voicebridge-*` only.
 - **Uncommitted working-tree state at authoring time**: the AGP built-in-Kotlin migration
-  edits to the two `build.gradle.kts` files were present but uncommitted; skills describe
-  the COMMITTED config and flag the migration as volatile (see Assumptions).
+  edits to the two `build.gradle.kts` files were present but uncommitted; the gate later
+  proved them load-bearing and they shipped in this release (see Assumptions and
+  tasks.md Phase 5).
 - **Known-unhandled (non-goals)**: no skill automates its own regeneration; no skill covers
   a backend (none exists — `Function_Mapping.md:5-9` is reserved-for-future-backend).
 
@@ -172,9 +173,9 @@ file reports "header-not-written".
 
 - Claude Code auto-discovers in-repo skills under `.claude/skills/` when a session works
   inside the repo (same mechanism as the existing `speckit-*` skills).
-- Citations reference HEAD at commit 80b756f (v0.0.7). Working-tree delta at authoring
-  time: uncommitted edits to `android/build.gradle.kts` and `android/app/build.gradle.kts`
-  removing the standalone `org.jetbrains.kotlin.android` plugin (AGP 9 built-in-Kotlin
-  migration). Skills document the committed config and mark the migration volatile.
+- Citations reference HEAD at commit 80b756f (v0.0.7) as of authoring. The AGP
+  built-in-Kotlin migration, uncommitted at authoring time, was committed later in the
+  same v0.0.8 release after the gate proved HEAD unbuildable without it (tasks.md
+  Phase 5, failure-archaeology INC-6); skill volatile-notes were settled accordingly.
 - The machine profile assumed by env-specific skills: JDK 17 Adoptium, SDK `C:\Android`,
   AVD `voicebridge_avd` — the same defaults parameterized in `android/scripts/smoke-test.ps1:47-53`.

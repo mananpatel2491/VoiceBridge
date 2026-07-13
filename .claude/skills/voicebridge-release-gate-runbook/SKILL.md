@@ -213,7 +213,7 @@ voicebridge-change-control.
    | Failure text | Likely cause |
    |---|---|
    | `could not find UI element: ...` / `not found: ...` | Label renamed in MainActivity.kt without updating the selector (§3), or the app never reached that screen — check the previous screenshot. |
-   | `button 'X': expected enabled=... got ...` | Enabled-state logic changed in MainActivity/MainViewModel, or a prior tap silently missed. |
+   | `button 'X': expected enabled=... got ...` | Enabled-state logic changed in MainActivity/MainViewModel, or a prior tap silently missed. Note (fixed v0.0.8, INC-6 in voicebridge-failure-archaeology): Compose buttons dump as a clickable parent View holding the REAL enabled state over an always-enabled TextView child; `Assert-Enabled` resolves the nearest clickable self-or-ancestor via `Get-EffectiveButtonNode`. If this signature reappears systematically (all-true or all-false), re-check the dump's node structure before blaming app logic. |
    | `verify_structure.py failed` | You added/removed a file without a Project_Structure.md changelog row. Run `python scripts\verify_structure.py` to list offenders. |
    | `android/local.properties is tracked by git` | `git rm --cached android/local.properties`. |
    | `logcat shows crash(es)` | Real app crash — stack trace is printed in the failure; full context: `adb logcat -d`. Hand off to voicebridge-debugging-playbook. |

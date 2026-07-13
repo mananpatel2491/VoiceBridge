@@ -478,4 +478,4 @@ Re-verification one-liners:
 - GCP Chirp 3 HD voices + Instant Custom Voice allowlist status: https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd and https://docs.cloud.google.com/text-to-speech/docs/chirp3-instant-custom-voice ; live gu-IN voice list: `curl.exe -s "https://texttospeech.googleapis.com/v1/voices?key=<KEY>&languageCode=gu-IN"`
 - Cloud TTS free tier: https://cloud.google.com/text-to-speech/pricing
 - IndicF5 license/languages: https://huggingface.co/ai4bharat/IndicF5
-- Volatile (2026-07-13): the working tree has UNCOMMITTED `build.gradle.kts` edits (AGP built-in-Kotlin migration). Check `git status` before citing build config as committed fact.
+- Build config note (2026-07-13): the AGP built-in-Kotlin migration is committed as of v0.0.8 (no standalone `org.jetbrains.kotlin.android` plugin — see voicebridge-failure-archaeology INC-6).

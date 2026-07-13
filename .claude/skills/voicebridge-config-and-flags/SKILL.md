@@ -157,16 +157,16 @@ Anything you add here is a project-wide change — treat it as config, run the a
 |---|---|---|
 | Gradle | **9.3.1** | `android/gradle/wrapper/gradle-wrapper.properties` (`distributionUrl=...gradle-9.3.1-bin.zip`). The wrapper (jar + scripts) is COMMITTED — a fresh clone builds with zero Gradle install. Changing this line changes the build for everyone; never regenerate the wrapper as a side effect. |
 | AGP | **9.1.1** | root `android/build.gradle.kts` — `id("com.android.application") version "9.1.1" apply false` |
-| Kotlin | **2.0.21** | root `android/build.gradle.kts` — Compose plugin `org.jetbrains.kotlin.plugin.compose version "2.0.21"`; see VOLATILE note for the Kotlin Android plugin itself |
+| Kotlin | **2.0.21** | root `android/build.gradle.kts` — Compose plugin `org.jetbrains.kotlin.plugin.compose version "2.0.21"`; Kotlin itself is AGP 9 built-in (no standalone Android plugin since v0.0.8 — see note below) |
 | JDK | **17** | `compileOptions` in `android/app/build.gradle.kts` (source/target `VERSION_17`) + smoke-test `-JavaHome` default |
 | compileSdk / targetSdk / minSdk | 35 / 35 / 24 | `android/app/build.gradle.kts` `defaultConfig` |
 | Compose BOM | 2024.09.00 | `android/app/build.gradle.kts` dependencies block |
 
-**VOLATILE (2026-07-13 — verify before relying on it):** the working tree has UNCOMMITTED edits to
-both `android/build.gradle.kts` and `android/app/build.gradle.kts` that remove the standalone
-`org.jetbrains.kotlin.android` plugin (AGP 9's built-in-Kotlin migration). The COMMITTED config
-(HEAD) still declares and applies `org.jetbrains.kotlin.android` version `2.0.21`. Do not describe
-the migration as shipped until it lands on main with a CHANGELOG entry. Check current state:
+**SETTLED in v0.0.8 (2026-07-13):** the AGP built-in-Kotlin migration is committed — neither
+gradle file applies the standalone `org.jetbrains.kotlin.android` plugin, and there is no
+`kotlinOptions` block (JVM target comes from `compileOptions` + built-in Kotlin). Re-adding the
+standalone plugin breaks configuration under AGP 9.1.1 (`Cannot add extension with name 'kotlin'`
+— see voicebridge-failure-archaeology INC-6). Check current state:
 
 ```powershell
 git -C C:\Docs\Build\mananUtils\VoiceBridge status --short android/
