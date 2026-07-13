@@ -125,13 +125,27 @@ function Assert-Node([xml]$ui, [string]$predicate, [string]$label) {
     }
 }
 
+# Compose buttons may dump as a clickable parent android.view.View (which carries the REAL
+# enabled state) wrapping a non-clickable TextView child that carries the text and always
+# reports enabled=true. Resolve the effective button node: self if clickable, else the
+# nearest clickable ancestor. (Observed 2026-07-13: text-node enabled was true for visually
+# disabled buttons; the clickable parent held the correct state.)
+function Get-EffectiveButtonNode([System.Xml.XmlNode]$node) {
+    $n = $node
+    while ($null -ne $n -and $n.NodeType -eq [System.Xml.XmlNodeType]::Element) {
+        if ($n.clickable -eq 'true') { return $n }
+        $n = $n.ParentNode
+    }
+    return $node
+}
+
 # Assert that a button with @text=$text has the expected Compose semantics enabled state.
-# Compose Material3 propagates enabled=false to the underlying AccessibilityNodeInfo, so
-# the uiautomator dump reflects it. KEEP IN SYNC with button labels in MainActivity.kt.
+# The state is read from the effective (clickable) node, not the text node — see
+# Get-EffectiveButtonNode. KEEP IN SYNC with button labels in MainActivity.kt.
 function Assert-Enabled([xml]$ui, [string]$text, [bool]$expected) {
     $node = $ui.SelectSingleNode("//node[@text='$text']")
     if (-not $node) { Fail "button not found: '$text'"; return }
-    $actual = [bool]::Parse($node.enabled)
+    $actual = [bool]::Parse((Get-EffectiveButtonNode $node).enabled)
     if ($actual -ne $expected) {
         Fail "button '$text': expected enabled=$expected, got enabled=$actual"
     } else {
@@ -228,6 +242,7 @@ Assert-Enabled $ui "Stop"    $false
 Assert-Enabled $ui "Play"    $false
 # Translate starts disabled (transcript field empty)
 $translateNode = $ui.SelectSingleNode("//node[contains(@text,'(English)')]")
+if ($null -ne $translateNode) { $translateNode = Get-EffectiveButtonNode $translateNode }
 if ($null -eq $translateNode) {
     Fail "Translate (English) button not found in initial state"
 } elseif ($translateNode.enabled -eq "true") {
@@ -258,6 +273,7 @@ $ui = Get-Ui
 Assert-Enabled $ui "Play" $true
 # Transcribe button text contains "Gujarati", so match with contains()
 $transcribeNode = $ui.SelectSingleNode("//node[contains(@text,'Transcribe')]")
+if ($null -ne $transcribeNode) { $transcribeNode = Get-EffectiveButtonNode $transcribeNode }
 if ($null -eq $transcribeNode) {
     Fail "Transcribe button not found after stop"
 } elseif ($transcribeNode.enabled -ne "true") {
