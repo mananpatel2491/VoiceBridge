@@ -10,6 +10,26 @@ hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-07-13
+### Added
+- **Agent skill library (repo-discipline distillation, docs+tooling only, $0/mo)**: 14
+  `voicebridge-*` skills under `.claude/skills/` (change-control, debugging-playbook,
+  failure-archaeology, architecture-contract, audio-pipeline-reference,
+  gcp-speech-apis-reference, config-and-flags, build-and-env, release-gate-runbook,
+  diagnostics-and-tooling incl. executable `inspect_wav.py` + `grab_diag.ps1`,
+  validation-and-qa, docs-and-writing, chunk3-voice-clone-tts-campaign incl. dated
+  provider survey, research-frontier) — authored by parallel agents, verified by a
+  factual/doctrine/usability review panel (30 findings, 19 blocking/important all fixed)
+- `specs/006-skill-library-distillation/`: as-built Spec Kit set for the capability
+### Fixed
+- (within the library, pre-release) purged a PowerShell 5.1 trap from 4 authored recipes:
+  `adb exec-out ... > file` corrupts binary pulls (UTF-16LE re-encode + BOM, empirically
+  verified); all device-file pulls now use the byte-safe two-step `/sdcard` route
+### Note
+- No app code changes. The uncommitted AGP built-in-Kotlin migration in the two
+  `build.gradle.kts` files remains in the working tree by Director decision (tracked as
+  006/T027).
+
 ## [0.0.7] - 2026-07-05
 ### Fixed
 - **Docs drift fixes (docs only)**: added the missing historical `[0.0.5]` changelog
