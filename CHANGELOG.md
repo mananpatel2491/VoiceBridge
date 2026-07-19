@@ -10,6 +10,28 @@ hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-07-19
+### Added
+- **Claude Code cloud/session config (dev tooling only, $0/mo)**: committed runtime
+  config so any fresh clone — claude.ai/code cloud sandboxes included — reproduces the
+  dev environment: `.claude/settings.json` (SessionStart hook wiring),
+  `.claude/session-setup.sh` (idempotent per-session bootstrap: generates the gitignored
+  `android/local.properties` from `ANDROID_HOME`/`GCP_STT_API_KEY` env vars ONLY when
+  absent — never touches an existing one — then `pip install -r requirements.txt`),
+  `.claude/cloud-setup.sh` (one-time cloud environment setup: JDK 17 + Android SDK 35
+  cmdline-tools + licenses + Gradle wrapper pre-warm; header documents the required
+  network allowlist)
+- `.gitattributes`: `*.sh text eol=lf` so shell scripts always check out Linux-safe
+### Decisions
+- Cloud sandboxes verify **build + lint only** — the emulator smoke test / release gate
+  stays a local-machine step by design (`.git/hooks` is untracked, so a cloud session
+  can never trigger the auto-merge)
+### Note
+- No app source changes. Verified before release: `assembleDebug` + `lintDebug` green
+  (lint: 1 pre-existing MissingPermission error + 10 warnings, non-blocking by config);
+  `session-setup.sh` proven a no-op when `local.properties` already exists (checksum
+  unchanged, exit 0)
+
 ## [0.0.8] - 2026-07-13
 ### Added
 - **Agent skill library (repo-discipline distillation, docs+tooling only, $0/mo)**: 14
