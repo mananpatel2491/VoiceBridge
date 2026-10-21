@@ -7,6 +7,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -27,6 +28,30 @@ object SttService {
 
     private const val STT_ENDPOINT = "https://speech.googleapis.com/v1/speech:recognize"
     private const val WAV_HEADER_BYTES = 44
+
+    /**
+     * Phrase hints (speechContexts) for words the gu-IN model mishears as common
+     * words, e.g. કીટલી → કેટલી, લપ → લગ્ન, માણેક ચોક → માણસ: Amdavadi slang,
+     * Ahmedabad places, Gujarati foods and festivals. Keep it general; don't add
+     * a test script's sentences, or the test stops measuring anything.
+     */
+    private val PHRASE_HINTS = listOf(
+        // Slang
+        "અલ્યા", "લ્યા", "બકા", "હેંડ", "હેંડ ને", "હેંડો", "કીટલી", "કટિંગ ચા",
+        "એક નંબર", "ડખો", "લપ", "ઢીલું ના મૂક", "જલસો", "જલસો પડી જશે", "મોજ",
+        "મોજે મોજ", "ભાઈબંધ", "ટાઈમપાસ", "વટ", "શું ચાલે", "મજામાં", "હોં",
+        // Places
+        "માણેક ચોક", "કાંકરિયા", "રિવરફ્રન્ટ", "લો ગાર્ડન", "સી જી રોડ",
+        "એસ જી હાઈવે", "ભદ્ર", "પોળ", "ખાડિયા", "મણિનગર", "નવરંગપુરા",
+        "સાબરમતી", "લાલ દરવાજા",
+        // Food
+        "ફાફડા", "જલેબી", "ખમણ", "ઢોકળા", "ગોટા", "દાબેલી", "ખાખરા",
+        "થેપલા", "ઊંધિયું", "ચીક્કી",
+        // Festivals and everyday words
+        "ઉત્તરાયણ", "પતંગ", "દોરી", "ફિરકી", "ધાબા", "કાઈપો છે", "લપેટ",
+        "નવરાત્રી", "ગરબા", "એક્ટિવા",
+    )
+    private const val PHRASE_BOOST = 10.0
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
@@ -50,6 +75,10 @@ object SttService {
                         put("encoding", "LINEAR16")
                         put("sampleRateHertz", AudioRecorder.SAMPLE_RATE)
                         put("languageCode", "gu-IN")
+                        put("speechContexts", JSONArray().put(JSONObject().apply {
+                            put("phrases", JSONArray(PHRASE_HINTS))
+                            put("boost", PHRASE_BOOST)
+                        }))
                     })
                     put("audio", JSONObject().apply {
                         put("content", audioContent)
