@@ -1,0 +1,54 @@
+# VoiceBridge, from mananutils-platform docs/templates/android-ci.yml (commit 42e80af).
+# Runbook: https://github.com/mananpatel2491/mananutils-platform/blob/main/docs/release-process.md#android-apps
+# No secrets: PRs (and forks of this public repo) run it too.
+name: Android CI
+on:
+  pull_request:
+  push:
+    branches: [main, "v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ANDROID_DIR: android # the Gradle project (where gradlew is); "." at the repo root
+  APP_MODULE: app
+  JAVA_VERSION: "21"
+
+jobs:
+  release-kit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Vendored release kit matches its pin
+        run: grep -v '^source ' scripts/release.pin | sha256sum -c --strict -
+      - run: python3 -m unittest discover -s scripts -p 'test_release.py'
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ${{ env.ANDROID_DIR }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      # No local.properties: BuildConfig fields read from it (API keys) are empty here, so the
+      # app's build must tolerate a missing value.
+      - name: Unit tests, lint, debug build
+        run: ./gradlew --no-daemon ":${APP_MODULE}:testDebugUnitTest" ":${APP_MODULE}:lintDebug" ":${APP_MODULE}:assembleDebug"
+      - name: Lint report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lint-report
+          path: ${{ env.ANDROID_DIR }}/${{ env.APP_MODULE }}/build/reports/
+          retention-days: 7
