@@ -1,6 +1,7 @@
 package com.mananpatel.voicebridge
 
 import android.util.Base64
+import com.mananpatel.voicebridge.AndroidClientHeaders.androidClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -87,6 +88,7 @@ object SttService {
 
                 val request = Request.Builder()
                     .url("$STT_ENDPOINT?key=$apiKey")
+                    .androidClient()
                     .post(requestJson.toRequestBody("application/json".toMediaType()))
                     .build()
 
