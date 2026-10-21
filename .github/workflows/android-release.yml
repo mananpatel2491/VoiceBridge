@@ -122,7 +122,12 @@ jobs:
           fi
           apksigner="$(printf '%s\n' "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)"
           "$apksigner" verify --print-certs "${apks[0]}" | tee "$RUNNER_TEMP/certs.txt"
-          actual="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/certs.txt")"
+          # Older apksigner prints "Signer #1 certificate ...", newer "V2 Signer: certificate ...".
+          actual="$(sed -nE 's/^(Signer #1|V[0-9.]+ Signer:) certificate SHA-256 digest: //p' "$RUNNER_TEMP/certs.txt" | head -n 1)"
+          if [ -z "$actual" ]; then
+            echo "::error::Couldn't read the certificate SHA-256 from apksigner's output (format changed?)."
+            exit 1
+          fi
           expected="$(printf '%s' "$EXPECTED_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
           if [ -n "$expected" ] && [ "$actual" != "$expected" ]; then
             echo "::error::Signed with certificate $actual, not ANDROID_CERT_SHA256 ($expected): wrong keystore."
