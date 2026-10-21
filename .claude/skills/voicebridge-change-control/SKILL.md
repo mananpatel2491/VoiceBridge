@@ -15,6 +15,8 @@ description: >-
   or for architecture questions (voicebridge-architecture-contract).
 ---
 
+> **Since v0.1.0 (2026-10-21):** the Windows PowerShell gate was removed: `android/scripts/smoke-test.ps1`, `install-hooks.ps1` and the post-commit hook (smoke test + auto-merge + push). Releases follow the shared Android release track: CI on PRs, `scripts/release.py rc/final`, signed APKs on GitHub releases, the on-phone checklist. See `voicebridge-release-gate-runbook`, PATTERNS.md §4–5 and `specs/007-android-release-track/`. Where this page mentions the old gate, the smoke test, hooks or auto-merge, that part is out of date; the dev loop is `115g vb` on the Chromebook.
+
 # VoiceBridge Change Control
 
 Every rule in this file exists because something went wrong (or almost did). Rationale

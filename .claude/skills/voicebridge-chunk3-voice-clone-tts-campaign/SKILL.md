@@ -3,6 +3,8 @@ name: voicebridge-chunk3-voice-clone-tts-campaign
 description: Executable, decision-gated campaign runbook for VoiceBridge Chunk 3 — voice-cloning TTS (speak the translated English text in the grandparent's own cloned voice; later, Gujarati output in the child's direction). Load this skill when the task is to start, resume, evaluate, spike, design, or ship any part of Chunk 3 TTS — provider selection (ElevenLabs vs GCP Chirp 3 vs IndicF5 vs device-native), clone-quality spikes, the TTSProvider interface, TTS playback integration, or promoting a TTS increment through the release gate. Also load it when someone asks "which TTS should VoiceBridge use", "how do we clone the grandparent's voice", or "what's next for Chunk 3". Do NOT load it for general build/emulator problems (voicebridge-build-and-env), release mechanics unrelated to TTS (voicebridge-release-gate-runbook), STT/Translation API work (voicebridge-gcp-speech-apis-reference), or the recorded-audio WAV pipeline itself (voicebridge-audio-pipeline-reference).
 ---
 
+> **Since v0.1.0 (2026-10-21):** the Windows PowerShell gate was removed: `android/scripts/smoke-test.ps1`, `install-hooks.ps1` and the post-commit hook (smoke test + auto-merge + push). Releases follow the shared Android release track: CI on PRs, `scripts/release.py rc/final`, signed APKs on GitHub releases, the on-phone checklist. See `voicebridge-release-gate-runbook`, PATTERNS.md §4–5 and `specs/007-android-release-track/`. Where this page mentions the old gate, the smoke test, hooks or auto-merge, that part is out of date; the dev loop is `115g vb` on the Chromebook.
+
 # Chunk 3 Campaign: Voice-Clone TTS
 
 You are executing the hardest open feature in VoiceBridge: take the English text

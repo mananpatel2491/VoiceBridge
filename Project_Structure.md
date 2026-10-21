@@ -30,10 +30,11 @@ This document provides a functional map of the codebase, enabling the Lead Agent
 | `android/app/src/main/java/com/mananpatel/voicebridge/AudioPlayer.kt` | **MediaPlayer wrapper**: plays back the recorded WAV file. |
 | `android/app/src/main/java/com/mananpatel/voicebridge/SttService.kt` | **STT client**: strips WAV header, base64-encodes PCM, POSTs to GCP STT v1 (`gu-IN`). |
 | `android/app/src/main/java/com/mananpatel/voicebridge/TranslationService.kt` | **Translation client**: POSTs text to GCP Cloud Translation v2 (`gu` -> `en`); same API key as STT. |
+| `android/app/src/main/java/com/mananpatel/voicebridge/AndroidClientHeaders.kt` | Adds `X-Android-Package` / `X-Android-Cert` to Google API requests, so the key's Android-app restriction accepts them. |
 | `android/app/src/main/AndroidManifest.xml` | Declares `RECORD_AUDIO` + `INTERNET` permissions; launcher activity. |
 | `android/app/src/main/res/values/strings.xml` | App string resources. |
 | `android/app/src/main/res/values/themes.xml` | Minimal Material Light NoActionBar theme for Compose. |
-| `android/app/build.gradle.kts` | App-level build config; injects `GCP_STT_API_KEY` from `local.properties` via `buildConfigField`. |
+| `android/app/build.gradle.kts` | App-level build config: `GCP_STT_API_KEY` from `local.properties` (empty default), version from `RELEASE_TAG`, CI-only release signing, `.debug` suffix, lint as a gate. |
 | `android/app/proguard-rules.pro` | Release ProGuard rules (debug builds skip ProGuard). |
 | `android/build.gradle.kts` | Root build file; declares AGP 9.1.1 + Kotlin 2.0.21 plugin versions. |
 | `android/settings.gradle.kts` | Declares project name and `:app` module. |
@@ -41,10 +42,14 @@ This document provides a functional map of the codebase, enabling the Lead Agent
 | `android/gradle/wrapper/gradle-wrapper.properties` | Pins Gradle 9.3.1 distribution URL. |
 | `android/local.properties.template` | Documents required `local.properties` keys (`sdk.dir`, `GCP_STT_API_KEY`); gitignored original. |
 | `android/.gitignore` | Excludes `local.properties`, build outputs, IDE files. |
-| `android/scripts/smoke-test.ps1` | **Smoke test**: build gate, emulator boot, UIAutomator-driven Record/Stop/Play/Transcribe flow, screenshot-per-step, crash scan, optional `-AutoMerge` flag. |
-| `android/scripts/install-hooks.ps1` | Copies hook templates from `android/scripts/hooks/` to `.git/hooks/` (run once per clone). |
-| `android/scripts/hooks/post-commit` | Git hook template: runs smoke test on every commit on vX.Y.Z branches; auto-merges when CHANGELOG.md is updated. |
-| `CHANGELOG.md` | Version history (Keep-a-Changelog format). Updating this in a commit is the auto-merge signal. |
+| `.github/workflows/android-ci.yml` | **CI gate**: unit tests, lint, debug build and the release-kit pin check on PRs, `main` and `v*` branches. No secrets. |
+| `.github/workflows/android-release.yml` | **Release**: on `v*` tags, signed release APK + emulator smoke test → GitHub pre-release (rc) or promotion of the rc's APK (final). |
+| `.github/release-checklist.md` | On-phone checks before `release.py final`; copied into each pre-release's notes. |
+| `.github/pull_request_template.md` | PR template (vendored from mananutils-platform). |
+| `scripts/release.py`, `scripts/test_release.py` | Release kit (vendored, don't edit): `rc` / `final` / `cleanup` tag commands and their tests. |
+| `scripts/release.pin` | Source commit + SHA-256 of the vendored kit; CI checks the copies against it. |
+| `CLAUDE.md` | Agent entry point: dev loop, release commands, pointers to GEMINI.md and the runbook. |
+| `CHANGELOG.md` | Version history (Keep-a-Changelog format), one entry per version on its branch before the first rc. |
 | `docs/architecture_overview.html` | **Visual Guide**: 1-page HTML overview of the framework. (Excluded from `verify_structure.py` checks) |
 | `Function_Mapping.md` | **Traceability Map**: Correlates client components with backend pipeline endpoints. (Rows are reserved-for-future-backend placeholders until the first backend ships.) |
 
@@ -75,3 +80,5 @@ This document provides a functional map of the codebase, enabling the Lead Agent
 | 2026-07-13 | ADD | `.claude/skills/voicebridge-*/` (14 skill dirs), `specs/006-skill-library-distillation/`, `CHANGELOG.md`, `Project_Structure.md` | **v0.0.8 — agent skill library (docs+tooling only, $0/mo).** 14 `voicebridge-*` repo-discipline skills under `.claude/skills/` (runbooks for change control, debugging, release gate, build/env, diagnostics with executable `inspect_wav.py`/`grab_diag.ps1`, validation, docs, GCP/audio references, failure archaeology, Chunk-3 voice-clone-TTS campaign, research frontier), authored by parallel agents + 3-lens review (30 findings, all 19 blocking/important fixed — incl. the PowerShell 5.1 `exec-out >` binary-corruption trap). As-built spec set `specs/006-*`. Skill dirs mapped at directory level per the `.claude/` map row. No app code changes. |
 | 2026-07-19 | ADD | `.claude/settings.json`, `.claude/session-setup.sh`, `.claude/cloud-setup.sh`, `.gitattributes`, `CHANGELOG.md`, `Project_Structure.md` | **v0.0.9 — Claude Code cloud/session config (dev tooling only, $0/mo).** SessionStart hook + idempotent per-session bootstrap (`session-setup.sh`: generates gitignored `android/local.properties` from env vars only when absent, then pip deps) + one-time cloud environment setup script (`cloud-setup.sh`: JDK 17, Android SDK 35, Gradle pre-warm; network allowlist documented). `.gitattributes` forces LF on `*.sh`. Decision: cloud sandboxes verify build+lint only — the emulator release gate stays local. No app code changes. |
 | 2026-07-13 | UPDATE | `android/build.gradle.kts`, `android/app/build.gradle.kts`, `android/scripts/smoke-test.ps1`, `CHANGELOG.md`, `Project_Structure.md`, `specs/006-skill-library-distillation/` | **v0.0.8 (cont.) — gate-surfaced fixes.** Committed the AGP 9 built-in-Kotlin migration (standalone `org.jetbrains.kotlin.android` + `kotlinOptions` removed; committed HEAD was unbuildable without it — `Cannot add extension with name 'kotlin'`). Smoke test: `Get-EffectiveButtonNode` resolves Compose enabled state from the clickable parent node (dump splits buttons into clickable View parent + always-enabled TextView child). Incident INC-6 in `voicebridge-failure-archaeology`; as-built record 006/T028–T031. |
+| 2026-10-21 | ADD | `.github/workflows/android-ci.yml`, `.github/workflows/android-release.yml`, `.github/release-checklist.md`, `.github/pull_request_template.md`, `scripts/release.py`, `scripts/test_release.py`, `scripts/release.pin`, `android/app/src/main/java/com/mananpatel/voicebridge/AndroidClientHeaders.kt`, `CLAUDE.md`, `specs/007-android-release-track/` | **v0.1.0 — Android release track.** Adopted the mananutils-platform Android release process (kit at 42e80af): CI on PRs, signed pre-release APKs on rc tags, promotion on final. Version from the tag, `.debug` build, lint as a gate, API key restriction headers, STT phrase hints. |
+| 2026-10-21 | REMOVE | `android/scripts/smoke-test.ps1`, `android/scripts/install-hooks.ps1`, `android/scripts/hooks/post-commit` | **v0.1.0 — retired the Windows PowerShell gate** (smoke test + auto-merge + push on CHANGELOG commits), replaced by the CI and release workflows above. |

@@ -80,37 +80,50 @@ VoiceBridge/
 
 ### Prerequisites
 
-- Android SDK at `C:\Android` (or your machine's path)
-- JDK 17
-- A physical Android phone (API 24+) with USB debugging on
+- JDK 17 or newer (the Chromebook dev box uses JDK 21) and the Android SDK
+  (platform 35, build-tools 35.0.0). On Linux, `.claude/cloud-setup.sh` installs the SDK.
+- A physical Android phone (API 24+) with wireless debugging on.
+- The Gradle wrapper is committed (Gradle 9.3.1); no global Gradle needed.
 
-### 1. Gradle wrapper (already committed)
-
-The Gradle wrapper (`gradlew`, `gradlew.bat`, `gradle/wrapper/gradle-wrapper.jar`,
-`gradle/wrapper/gradle-wrapper.properties`) **is committed** — no bootstrap step is
-needed after cloning. The wrapper pins Gradle 9.3.1.
-
-*(Only if the wrapper is ever missing or corrupted: run `gradle wrapper --gradle-version=9.3.1` from `android/` — requires Gradle on your PATH.)*
-
-### 2. Create `android/local.properties`
+### 1. Create `android/local.properties` (gitignored, never commit it)
 
 ```
-# Windows SDK path
-sdk.dir=C\:\\Android
-
-# Chunk 1: GCP Speech-to-Text API key (leave blank for Chunk 0)
+sdk.dir=/home/<you>/Android/Sdk
 GCP_STT_API_KEY=
 ```
 
-`local.properties` is gitignored — never commit it. See `local.properties.template` for reference.
+Leave the key blank for Chunk 0. See `local.properties.template`.
 
-### 3. Build and install
+### 2. Dev loop: build and install the debug build
 
-```powershell
-cd C:\Docs\Build\mananUtils\VoiceBridge\android
-.\gradlew assembleDebug
-adb install app\build\outputs\apk\debug\app-debug.apk
+```bash
+cd android
+./gradlew installDebug          # or, on the Chromebook: 115g vb (build + install + launch)
 ```
+
+The debug build is `com.mananpatel.voicebridge.debug`, so it installs next to a release
+build (`com.mananpatel.voicebridge`). Local builds report version `0.0.0-dev`.
+
+Before a PR, run what CI runs: `./gradlew testDebugUnitTest lintDebug assembleDebug`.
+Lint errors fail the build.
+
+### 3. Releases
+
+VoiceBridge follows the Android track of the shared release process:
+[mananutils-platform runbook](https://github.com/mananpatel2491/mananutils-platform/blob/main/docs/release-process.md#android-apps).
+The owner runs the tag commands; each takes `--dry-run`.
+
+```bash
+git push origin refs/heads/vX.Y.Z               # the version branch
+python3 scripts/release.py rc X.Y.Z             # tag vX.Y.Z-rc.N -> signed APK on a GitHub pre-release
+#   install it on the phone, work through .github/release-checklist.md, merge the PR
+python3 scripts/release.py final X.Y.Z          # tag main vX.Y.Z -> promotes the rc's APK
+python3 scripts/release.py cleanup X.Y.Z        # after deleting the rc pre-releases (see runbook)
+```
+
+The version comes from the tag (`versionName` X.Y.Z, `versionCode` X*10000+Y*100+Z). Release
+APKs are signed in CI only; a release APK can't be installed over a build signed with
+another key, so uninstall the old one first.
 
 ### 4. Acceptance test — Chunk 0
 
@@ -134,9 +147,16 @@ Both STT (Chunk 1) and Translation (Chunk 2) use the **same GCP project and the 
    ```
    GCP_STT_API_KEY=AIza...
    ```
-5. Rebuild: `.\gradlew assembleDebug` and reinstall.
+5. Rebuild and reinstall: `./gradlew installDebug`.
 
 The key is injected at build time via `BuildConfig.GCP_STT_API_KEY` — it is NOT in source control.
+
+The repo is public and the key ends up inside every APK, so the key is restricted: only
+the two packages (`com.mananpatel.voicebridge` and `.debug`) with their signing-certificate
+SHA-1s, only the Speech-to-Text and Translation APIs, and a per-day quota cap. The app sends
+`X-Android-Package` / `X-Android-Cert` on each request for this. A build signed with a
+different key (for example a new Chromebook's debug key) gets "Requests from this Android
+client application are blocked" until its SHA-1 is added to the key.
 
 ### Chunk 1 acceptance test
 

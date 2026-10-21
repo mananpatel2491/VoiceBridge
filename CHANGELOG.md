@@ -3,12 +3,37 @@
 All notable changes to VoiceBridge are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) / SemVer.
 
-Rule: updating this file in a commit on a vX.Y.Z branch triggers the post-commit
-hook to auto-merge that branch to main and push both to origin. See PATTERNS.md.
+Each version adds its entry on the vX.Y.Z branch before its first release candidate.
+Releases: `scripts/release.py` (rc → final), see PATTERNS.md §4.
 
 ---
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-10-21
+### Changed
+- **Release process**: VoiceBridge adopts the Android track of the shared
+  mananutils-platform release process (kit vendored at 42e80af). Version branch →
+  `scripts/release.py rc` (signed APK on a GitHub pre-release, emulator smoke test,
+  on-phone checklist) → PR merge → `release.py final` (promotes the rc's APK).
+  `.github/workflows/android-ci.yml` gates PRs; `android-release.yml` runs on `v*` tags.
+- Version comes from the tag (`versionName` X.Y.Z, `versionCode` X*10000+Y*100+Z);
+  `RELEASE_TAG` / `GIT_SHA` in `BuildConfig`. Local builds are `0.0.0-dev`.
+- Debug build is `com.mananpatel.voicebridge.debug`; release signing happens in CI only.
+- Lint errors now fail the build (`abortOnError = true`).
+### Added
+- STT phrase hints (`speechContexts`, boost 10) for Amdavadi slang, Ahmedabad places,
+  foods and festivals. On a 48 s slang test recording, word errors fell from 36% to 22%.
+- `X-Android-Package` / `X-Android-Cert` headers on STT and Translation requests
+  (`AndroidClientHeaders.kt`), so the API key can be restricted to this app.
+- `.github/release-checklist.md`, the vendored release kit, `CLAUDE.md`.
+### Fixed
+- `AudioRecorder` reports a revoked microphone permission instead of crashing (lint
+  `MissingPermission`).
+### Removed
+- The Windows PowerShell gate: `android/scripts/smoke-test.ps1`,
+  `android/scripts/install-hooks.ps1`, `android/scripts/hooks/post-commit` (smoke test +
+  auto-merge + push on CHANGELOG commits). See `specs/007-android-release-track/`.
 
 ## [0.0.9] - 2026-07-19
 ### Added

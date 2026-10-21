@@ -7,9 +7,9 @@
 # Network allowlist the environment needs: dl.google.com,
 # services.gradle.org, maven.google.com, repo.maven.apache.org, pypi.org.
 #
-# Deliberately NO emulator and NO git hooks: the UI smoke test / release
-# gate (android/scripts/install-hooks.ps1 + smoke-test.ps1) stays a
-# local-machine step. Cloud sessions verify build + lint only.
+# Deliberately NO emulator: cloud sessions verify build + lint only. The
+# emulator smoke test runs in GitHub Actions on release tags
+# (.github/workflows/android-release.yml), not here.
 set -euo pipefail
 
 # JDK 17 (skip if the sandbox image already has one)

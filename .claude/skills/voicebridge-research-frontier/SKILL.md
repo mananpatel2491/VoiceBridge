@@ -3,6 +3,8 @@ name: voicebridge-research-frontier
 description: The four open research problems where VoiceBridge pushes past well-trodden ground — Gujarati voice-clone TTS for a low-resource language, the Chunk 4 real-time two-phone acoustic relay (echo/feedback + latency budget), code-switched and child/elderly-speech STT measurement, and the on-device vs cloud split under free-tier cost gates — plus the evidence bar any claimed progress must clear. Load when someone asks "what are the hard open problems", "what should we research next", "is X feasible for VoiceBridge", "how do we prove this spike worked", "what counts as a result", or before ANY exploratory work (spike, model eval, latency measurement, feasibility study). Do NOT load it for executing the Chunk 3 TTS campaign (voicebridge-chunk3-voice-clone-tts-campaign), how the shipped pipeline works (voicebridge-audio-pipeline-reference, voicebridge-gcp-speech-apis-reference), shipping finished work (voicebridge-change-control), or build/runtime debugging (voicebridge-build-and-env, voicebridge-debugging-playbook).
 ---
 
+> **Since v0.1.0 (2026-10-21):** the Windows PowerShell gate was removed: `android/scripts/smoke-test.ps1`, `install-hooks.ps1` and the post-commit hook (smoke test + auto-merge + push). Releases follow the shared Android release track: CI on PRs, `scripts/release.py rc/final`, signed APKs on GitHub releases, the on-phone checklist. See `voicebridge-release-gate-runbook`, PATTERNS.md §4–5 and `specs/007-android-release-track/`. Where this page mentions the old gate, the smoke test, hooks or auto-merge, that part is out of date; the dev loop is `115g vb` on the Chromebook.
+
 # VoiceBridge Research Frontier
 
 VoiceBridge's shipped surface (Chunks 0–2: record → Gujarati STT → gu→en

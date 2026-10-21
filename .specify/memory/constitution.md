@@ -28,12 +28,12 @@ Every infra-dependent feature requires a Terraform update (GCP). Projected costs
 - **Roles**: The Director (user) owns intent, arbitration, and final review. The Lead Agent owns autonomous reasoning, planning, and error-free execution.
 - **Proactive hardening**: when touching an existing file, audit for security risks (injection, leaked secrets, audio data leakage) and resource/memory leaks; patch immediately.
 - **Production readiness**: temporary/mock markers (`TODO: temp`, `fix later`) must be flagged to the Director before proceeding.
-- **Secrets stay local**: API keys live in `android/local.properties` (gitignored) and are injected via `buildConfigField` — never committed.
+- **Secrets stay local**: API keys live in `android/local.properties` (gitignored) and are injected via `buildConfigField` — never committed. CI gets them from the `LOCAL_PROPERTIES` secret of the `android-release` environment.
 
 ## Development Workflow
 
-- Version-branch git flow: work on a `vX.Y.Z` branch, never commit directly to `main`. Updating `CHANGELOG.md` is the release signal — the post-commit hook (installed by `android/scripts/install-hooks.ps1`) runs the smoke test and auto-merges to `main` on pass; non-CHANGELOG commits run the smoke test only.
-- Commit convention: `feat:` / `fix:` / `chore:`; the release commit is `chore: vX.Y.Z`.
+- Version-branch git flow: work on a `vX.Y.Z` branch, never commit directly to `main`; changes reach `main` by PR with green CI. Releases follow the mananutils-platform Android track (https://github.com/mananpatel2491/mananutils-platform/blob/main/docs/release-process.md#android-apps): `scripts/release.py rc` → signed pre-release APK + on-phone checklist → merge → `release.py final` (promotes the rc's APK). The owner pushes the tags.
+- Commit convention: `feat:` / `fix:` / `chore:`.
 - Maintenance scripts in `scripts/` are Python, cross-platform, `argparse`-based with `--dry-run` support; run `verify_structure.py` after every feature. Tedious mechanical work may be delegated to the local Ollama instance to preserve API quota.
 - Clarify ambiguous prompts before acting; if a line of code cannot be justified, it is not implemented.
 - Start fresh sessions frequently to avoid context rot; durable memory lives in `Project_Structure.md`, `PATTERNS.md`, `GEMINI.md`, and `specs/`.

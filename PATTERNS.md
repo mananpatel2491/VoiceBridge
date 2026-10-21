@@ -28,21 +28,24 @@ This document records established engineering patterns and design decisions to e
 *   **CLI Argument Parsing**: Use the standard `argparse` library for all scripts to provide a consistent interface for flags and help menus.
 *   **Async-First**: Voice pipeline components that perform I/O (network, audio device) must use `asyncio`. Synchronous calls in an async context require explicit justification in the code.
 
-## 4. Git Workflow
+## 4. Git Workflow and Releases
 
-*   **Version Branches**: All feature work is done on a branch named `vX.Y.Z` matching the version being built. Never commit directly to `main`.
-*   **Auto-Merge Signal**: Updating `CHANGELOG.md` in a commit is the signal that a version is complete. The post-commit hook (installed by `android/scripts/install-hooks.ps1`) runs the smoke test and, if it passes, auto-merges the branch to `main` and pushes both branches to `origin`.
-*   **Intermediate Commits**: Commits on a `vX.Y.Z` branch that do NOT update `CHANGELOG.md` run the smoke test only — no merge fires. Use these freely for in-progress work.
-*   **Install Hooks on Clone**: The `.git/hooks/` directory is not tracked. After every fresh clone, run `powershell -File android/scripts/install-hooks.ps1` to re-install the post-commit hook.
-*   **Commit Message Convention**: `feat:` for new features, `fix:` for bug fixes, `chore:` for maintenance (CHANGELOG update, dependency bump). The version-release commit that triggers auto-merge uses `chore: vX.Y.Z`.
+*   **Shared release process**: VoiceBridge follows the Android track of the mananutils-platform release process ([runbook](https://github.com/mananpatel2491/mananutils-platform/blob/main/docs/release-process.md#android-apps)). Since v0.1.0 it replaces the PowerShell post-commit gate (smoke test + auto-merge + push), which is retired.
+*   **Version Branches**: All work for a version is done on a branch named `vX.Y.Z`, pushed with `git push origin refs/heads/vX.Y.Z`. Never commit directly to `main`. Changes reach `main` through a PR (CI must be green), never by a hook.
+*   **Release candidates**: `python3 scripts/release.py rc X.Y.Z` tags the pushed branch `vX.Y.Z-rc.N`. The tag runs `.github/workflows/android-release.yml`: unit tests, lint, signed release APK, emulator smoke test, then a GitHub pre-release with the APK. Install it on the test phone and work through `.github/release-checklist.md`.
+*   **Final**: merge the PR, then `python3 scripts/release.py final X.Y.Z` tags `main`. It refuses when `main`'s files differ from the last rc; the workflow then promotes that rc's APK unchanged. Afterwards: delete the rc pre-releases, `release.py cleanup X.Y.Z`, delete the version branch.
+*   **Owner runs the tags**: `release.py` pushes tags. Agents run it only with `--dry-run`. The vendored kit (`scripts/release.py`, `scripts/test_release.py`, `.github/pull_request_template.md`) is pinned by `scripts/release.pin`; never edit the copies here, change them in mananutils-platform and vendor again.
+*   **Version from the tag**: `versionName = X.Y.Z`, `versionCode = X*10000 + Y*100 + Z` (Y, Z < 100); `RELEASE_TAG` and `GIT_SHA` are in `BuildConfig`. Local builds are `0.0.0-dev`, code 1. Never hand-edit a version in Gradle.
+*   **CHANGELOG**: every version adds its entry on the version branch before the rc. It's documentation, no longer a trigger.
+*   **Commit Message Convention**: `feat:` for new features, `fix:` for bug fixes, `chore:` for maintenance (CHANGELOG update, dependency bump).
 
-## 5. Smoke Test
+## 5. Build Variants, Signing and Checks
 
-*   **Single Command Gate**: `powershell -File android/scripts/smoke-test.ps1 -Build` must pass before any version is considered shippable. The script is the authoritative definition of "done" for a version.
-*   **Emulator-Driven, Not Pixel-Based**: Element taps are resolved from a live `uiautomator dump` by `@text` or `@content-desc` — never hardcoded coordinates. This survives layout shifts and resolution changes. KEEP SELECTORS IN SYNC with `MainActivity.kt` label strings whenever buttons are renamed or screens are added.
-*   **Screenshot Archive**: Each test step saves a timestamped screenshot to `android/app/build/smoke-<timestamp>/` (gitignored). These are the primary debugging artifact for failed runs.
-*   **Crash Gate**: Logcat is scanned for `FATAL EXCEPTION` / `E AndroidRuntime` after every UI step. Any crash fails the test unconditionally.
-*   **Transcribe Without a Key**: The smoke test taps Transcribe without a real API key and asserts that an error card appears (not a crash). This verifies Chunk 1 error surfacing in CI without needing a live credential.
+*   **Two package ids**: the debug build is `com.mananpatel.voicebridge.debug` (`applicationIdSuffix`), the release build `com.mananpatel.voicebridge`. They install side by side. The dev loop is `115g vb` (or `./gradlew installDebug`) to the test phone over wireless adb.
+*   **Release signing is CI-only**: one PKCS12 keystore (alias `release`), master copy in Vaultwarden; CI reads it from the GitHub environment `android-release` (v* tags only) and checks the certificate against `ANDROID_CERT_SHA256`. Locally `assembleRelease` gives an unsigned APK. A release APK can't be installed over a build signed with another key: uninstall first.
+*   **CI gate (every PR, `main`, `v*` branches)**: `.github/workflows/android-ci.yml` runs `testDebugUnitTest lintDebug assembleDebug` without secrets (the API key is empty there) and checks the vendored kit against its pin. Lint errors fail the build (`abortOnError = true`).
+*   **Smoke test**: the release workflow installs the signed APK on a KVM emulator, launches it, and fails if it crashed or isn't running after 20 s. What an emulator can't show (microphone, real network, the key's Android restriction) is in `.github/release-checklist.md`, done on the phone before `final`.
+*   **API key in a public APK**: the key is restricted to the two packages + certificate SHA-1s and to the STT and Translation APIs, with a per-day quota cap. The restriction only works because every request sends `X-Android-Package` and `X-Android-Cert` (`AndroidClientHeaders.kt`); a new HTTP call to a Google API must use `.androidClient()` too.
 
 ## 6. Tooling Conventions
 
