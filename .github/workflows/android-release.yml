@@ -105,7 +105,9 @@ jobs:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS || 'release' }}
-        run: ./gradlew --no-daemon ":${APP_MODULE}:testReleaseUnitTest" ":${APP_MODULE}:lintRelease" ":${APP_MODULE}:assembleRelease"
+        # AGP 9 only creates unit-test tasks for the tested build type (debug): there is no
+        # testReleaseUnitTest. The unit tests run against the same sources either way.
+        run: ./gradlew --no-daemon ":${APP_MODULE}:testDebugUnitTest" ":${APP_MODULE}:lintRelease" ":${APP_MODULE}:assembleRelease"
       - name: Check the signature, name the APK
         env:
           EXPECTED_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
