@@ -1,0 +1,257 @@
+# VoiceBridge, from mananutils-platform docs/templates/android-release.yml (commit 42e80af).
+# Runbook: https://github.com/mananpatel2491/mananutils-platform/blob/main/docs/release-process.md#android-apps
+#
+#   vX.Y.Z-rc.N  build, sign, test, lint, emulator smoke test -> GitHub pre-release with the APK
+#   vX.Y.Z       promote the last rc's APK (same bytes) when the tag's files equal that rc's;
+#                otherwise (no rc, or release.py final --force) build it the same way as an rc
+#
+# No Google Cloud login. Signing secrets and LOCAL_PROPERTIES (the GCP API key) live in the
+# GitHub environment "android-release", which only v* tags may use.
+name: Android release
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  ANDROID_DIR: android # the Gradle project (where gradlew is); "." at the repo root
+  APP_MODULE: app
+  JAVA_VERSION: "21"
+  EMULATOR_API: "34" # >= the app's minSdk; an x86_64 google_apis image
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      prerelease: ${{ steps.plan.outputs.prerelease }}
+      promote_from: ${{ steps.plan.outputs.promote_from }}
+      apk: ${{ steps.plan.outputs.apk }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # all tags, to find the last rc and compare its files
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)(-rc\.[0-9]+)?$ ]]; then
+            echo "::error::$TAG is not vX.Y.Z or vX.Y.Z-rc.N; nothing to release."
+            exit 1
+          fi
+          version="${BASH_REMATCH[1]}"
+          name="${GITHUB_REPOSITORY#*/}"
+          prerelease=true
+          promote=""
+          if [ -z "${BASH_REMATCH[2]}" ]; then
+            prerelease=false
+            rc="$(git tag -l "v${version}-rc.*" | sort -V | tail -n 1)"
+            if [ -n "$rc" ] \
+              && [ "$(git rev-parse "${rc}^{tree}")" = "$(git rev-parse "HEAD^{tree}")" ] \
+              && gh release view "$rc" --json assets --jq '.assets[].name' | grep -qxF "${name}-${rc}.apk"; then
+              promote="$rc"
+            fi
+          fi
+          {
+            echo "prerelease=$prerelease"
+            echo "promote_from=$promote"
+            echo "apk=${name}-${TAG}.apk"
+          } >>"$GITHUB_OUTPUT"
+          if [ -n "$promote" ]; then
+            echo "Promote the APK of $promote (same files as $TAG)." >>"$GITHUB_STEP_SUMMARY"
+          else
+            echo "Build $TAG." >>"$GITHUB_STEP_SUMMARY"
+          fi
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.promote_from == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: android-release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - name: Signing key and app properties
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::error::Secret ANDROID_KEYSTORE_B64 is not set in the environment android-release."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 -d >"$RUNNER_TEMP/release.jks"
+          # Optional: the app's gitignored local.properties (API keys for BuildConfig), no sdk.dir.
+          if [ -n "$LOCAL_PROPERTIES" ]; then
+            printf '%s\n' "$LOCAL_PROPERTIES" >"$ANDROID_DIR/local.properties"
+          fi
+      - name: Unit tests, lint, signed release build
+        working-directory: ${{ env.ANDROID_DIR }}
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS || 'release' }}
+        run: ./gradlew --no-daemon ":${APP_MODULE}:testReleaseUnitTest" ":${APP_MODULE}:lintRelease" ":${APP_MODULE}:assembleRelease"
+      - name: Check the signature, name the APK
+        env:
+          EXPECTED_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+          APK: ${{ needs.plan.outputs.apk }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          apks=("$ANDROID_DIR/$APP_MODULE/build/outputs/apk/release/"*.apk)
+          if [ "${#apks[@]}" -ne 1 ] || [[ "${apks[0]}" == *-unsigned.apk ]]; then
+            echo "::error::Expected one signed release APK, found: ${apks[*]:-none}. Does the release signingConfig read ANDROID_KEYSTORE_*?"
+            exit 1
+          fi
+          apksigner="$(printf '%s\n' "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)"
+          "$apksigner" verify --print-certs "${apks[0]}" | tee "$RUNNER_TEMP/certs.txt"
+          actual="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/certs.txt")"
+          expected="$(printf '%s' "$EXPECTED_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
+          if [ -n "$expected" ] && [ "$actual" != "$expected" ]; then
+            echo "::error::Signed with certificate $actual, not ANDROID_CERT_SHA256 ($expected): wrong keystore."
+            exit 1
+          fi
+          mkdir -p dist
+          cp "${apks[0]}" "dist/$APK"
+          (cd dist && sha256sum "$APK" >"$APK.sha256")
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks" "$ANDROID_DIR/local.properties"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: apk
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
+
+  smoke:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: apk
+          path: dist
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      # Installs the exact signed APK, launches it, and fails if it crashed or isn't running.
+      - name: Smoke script
+        run: |
+          cat >"$RUNNER_TEMP/smoke.sh" <<'EOF'
+          set -euo pipefail
+          apk="$1"
+          aapt2="$(printf '%s\n' "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -n 1)"
+          pkg="$("$aapt2" dump packagename "$apk")"
+          adb install -r "$apk"
+          adb logcat -c
+          adb shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1
+          sleep 20
+          if adb logcat -d -b crash | grep -F "$pkg"; then
+            echo "::error::$pkg crashed after launch."
+            exit 1
+          fi
+          if ! adb shell pidof "$pkg"; then
+            adb logcat -d | tail -n 200
+            echo "::error::$pkg is not running 20 s after launch."
+            exit 1
+          fi
+          echo "$pkg launched and is running."
+          EOF
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: ${{ env.EMULATOR_API }}
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: bash "$RUNNER_TEMP/smoke.sh" "dist/${{ needs.plan.outputs.apk }}"
+
+  publish:
+    needs: [plan, build, smoke]
+    if: >-
+      always() && needs.plan.result == 'success' &&
+      (needs.plan.outputs.promote_from != '' || needs.smoke.result == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release and upload the APK
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github # for the optional .github/release-checklist.md
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: needs.plan.outputs.promote_from == ''
+        with:
+          name: apk
+          path: dist
+      - name: Promote the APK of the last release candidate
+        if: needs.plan.outputs.promote_from != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RC: ${{ needs.plan.outputs.promote_from }}
+          APK: ${{ needs.plan.outputs.apk }}
+        run: |
+          set -euo pipefail
+          rc_apk="${GITHUB_REPOSITORY#*/}-${RC}.apk"
+          gh release download "$RC" -R "$GITHUB_REPOSITORY" -D rc -p "$rc_apk" -p "$rc_apk.sha256"
+          (cd rc && sha256sum -c --strict "$rc_apk.sha256")
+          mkdir -p dist
+          cp "rc/$rc_apk" "dist/$APK"
+          (cd dist && sha256sum "$APK" >"$APK.sha256")
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          APK: ${{ needs.plan.outputs.apk }}
+          RC: ${{ needs.plan.outputs.promote_from }}
+          PRERELEASE: ${{ needs.plan.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          sum="$(cut -d' ' -f1 "dist/$APK.sha256")"
+          {
+            if [ "$PRERELEASE" = true ]; then
+              echo "Release candidate. Install it on the test phone and check it before \`release.py final\`:"
+              echo
+              echo '```'
+              echo "adb install -r $APK"
+              echo '```'
+              if [ -f .github/release-checklist.md ]; then
+                echo
+                cat .github/release-checklist.md
+              fi
+            elif [ -n "$RC" ]; then
+              echo "The APK of $RC, promoted unchanged (the files of $TAG and $RC are the same)."
+            else
+              echo "Built from $TAG (no release candidate with the same files had an APK)."
+            fi
+            echo
+            echo "SHA-256 of \`$APK\`: \`$sum\`"
+          } >"$RUNNER_TEMP/notes.md"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber   # a re-run
+          elif [ "$PRERELEASE" = true ]; then
+            gh release create "$TAG" dist/* --verify-tag --title "$TAG" \
+              --notes-file "$RUNNER_TEMP/notes.md" --prerelease --latest=false
+          else
+            gh release create "$TAG" dist/* --verify-tag --title "$TAG" \
+              --notes-file "$RUNNER_TEMP/notes.md" --latest
+          fi

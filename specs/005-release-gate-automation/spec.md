@@ -4,7 +4,7 @@
 
 **Created**: 2026-07-05
 
-**Status**: Shipped (v0.0.3; hook `-Build` fix in the v0.0.4 cycle, commit 88ac97a)
+**Status**: **Superseded in v0.1.0** by `specs/007-android-release-track/` (the PowerShell smoke test and post-commit hook were removed). Shipped v0.0.3; hook `-Build` fix in the v0.0.4 cycle, commit 88ac97a. Kept as the historical record.
 
 **Input**: retro-spec conversion of v0.0.3 (commit 93d1549 — smoke test, CI/CD hook, script
 infrastructure) + commit 88ac97a (hook passes `-Build` on release commits)

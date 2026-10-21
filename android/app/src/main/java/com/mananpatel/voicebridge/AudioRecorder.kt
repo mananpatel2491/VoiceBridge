@@ -45,13 +45,18 @@ class AudioRecorder {
         val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
         val bufSize = maxOf(minBuf, 8192)
 
-        val ar = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            SAMPLE_RATE,
-            CHANNEL_CONFIG,
-            AUDIO_FORMAT,
-            bufSize
-        )
+        // MainActivity asks for RECORD_AUDIO first, but the user can revoke it at any time.
+        val ar = try {
+            AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                SAMPLE_RATE,
+                CHANNEL_CONFIG,
+                AUDIO_FORMAT,
+                bufSize
+            )
+        } catch (e: SecurityException) {
+            error("Microphone permission is not granted. Allow it in the app's settings.")
+        }
         check(ar.state == AudioRecord.STATE_INITIALIZED) {
             "AudioRecord failed to initialize — verify RECORD_AUDIO permission is granted."
         }

@@ -1,5 +1,6 @@
 package com.mananpatel.voicebridge
 
+import com.mananpatel.voicebridge.AndroidClientHeaders.androidClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -38,6 +39,7 @@ object TranslationService {
 
                 val request = Request.Builder()
                     .url("$ENDPOINT?key=$apiKey")
+                    .androidClient()
                     .post(requestJson.toRequestBody("application/json; charset=utf-8".toMediaType()))
                     .build()
 

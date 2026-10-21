@@ -11,6 +11,11 @@ val localProps = Properties().also { props ->
     if (f.exists()) f.inputStream().use { props.load(it) }
 }
 
+// Version from the release tag, signing from the environment: both set by CI
+// (.github/workflows/android-release.yml). Local builds are 0.0.0-dev, code 1.
+val releaseTag = System.getenv("RELEASE_TAG").orEmpty()
+val tagVersion = Regex("""^v(\d+)\.(\d+)\.(\d+)(?:-rc\.\d+)?$""").matchEntire(releaseTag)?.destructured
+
 android {
     namespace = "com.mananpatel.voicebridge"
     compileSdk = 35
@@ -19,8 +24,10 @@ android {
         applicationId = "com.mananpatel.voicebridge"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.0.4"
+        versionName = tagVersion?.let { (x, y, z) -> "$x.$y.$z" } ?: "0.0.0-dev"
+        versionCode = tagVersion?.let { (x, y, z) -> x.toInt() * 10000 + y.toInt() * 100 + z.toInt() } ?: 1
+        buildConfigField("String", "RELEASE_TAG", "\"${releaseTag.ifEmpty { "dev" }}\"")
+        buildConfigField("String", "GIT_SHA", "\"${System.getenv("GITHUB_SHA")?.take(7) ?: "local"}\"")
 
         // Inject STT API key at build time; falls back to "" if not set in local.properties.
         // The app surfaces a clear error message when the key is blank.
@@ -29,6 +36,27 @@ android {
             "GCP_STT_API_KEY",
             "\"${localProps.getProperty("GCP_STT_API_KEY", "")}\""
         )
+    }
+
+    // Release APKs come from CI only. Without ANDROID_KEYSTORE_PATH there is no
+    // signing config, and assembleRelease gives an unsigned APK (AGP 9 refuses
+    // a signing config without a storeFile, so it is only created with one).
+    val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+    signingConfigs {
+        if (keystorePath != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "release"
+                keyPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") // PKCS12: same password
+            }
+        }
+    }
+
+    buildTypes {
+        release { signingConfig = signingConfigs.findByName("release") }
+        // Own package id, so a debug build installs next to the release build.
+        debug { applicationIdSuffix = ".debug" }
     }
 
     buildFeatures {
@@ -42,9 +70,9 @@ android {
     }
 
     lint {
-        // Warn but do not abort on lint issues — smoke test controls the quality gate.
-        // HTML report is written to app/build/reports/lint-results-debug.html.
-        abortOnError = false
+        // Lint errors fail the build: CI's lintDebug / lintRelease are a gate.
+        // HTML report is written to app/build/reports/lint-results-<variant>.html.
+        abortOnError = true
         checkReleaseBuilds = false
         htmlReport = true
     }

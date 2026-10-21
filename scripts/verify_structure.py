@@ -65,10 +65,11 @@ def verify(dry_run=False):
             # directory level in Project_Structure.md, not file-by-file
             if rel_path.parts[0] in (".specify", ".claude", ".gemini", "specs"):
                 continue
-            # Gitignored local Android build outputs are never logged in the changelog
+            # Gitignored local outputs (Android builds, the Python venv) are never logged
             posix = rel_path.as_posix()
             if (
-                posix.startswith("android/.gradle/")
+                posix.startswith(".venv/")
+                or posix.startswith("android/.gradle/")
                 or posix.startswith("android/app/build/")
                 or posix == "android/local.properties"
             ):

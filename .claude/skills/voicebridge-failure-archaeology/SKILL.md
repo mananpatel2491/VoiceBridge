@@ -3,6 +3,8 @@ name: voicebridge-failure-archaeology
 description: The VoiceBridge incident and dead-end ledger — incidents, docs-drift bugs, flakes, and rejected alternatives, each with symptom, root cause, evidence (commit SHA / file:line), status, and the rule it created. Load this skill when a symptom feels like it "must have happened before" (release merged without a CHANGELOG entry, smoke test passing against a stale APK, docs contradicting the repo, an ANR dialog breaking UI automation), when about to re-propose a possibly-rejected technology (DeepL, Azure Translator, OpenAI/Whisper, Flutter/React Native, M4A audio), when you need the WHY behind a rule in GEMINI.md/PATTERNS.md, or when asked "has this failed before?", "why is it done this way?", or to write a post-mortem. Do NOT load it for executing a release (voicebridge-release-gate-runbook), live debugging of a NEW failure (voicebridge-debugging-playbook), current architecture facts (voicebridge-architecture-contract), or build/env setup (voicebridge-build-and-env).
 ---
 
+> **Since v0.1.0 (2026-10-21):** the Windows PowerShell gate was removed: `android/scripts/smoke-test.ps1`, `install-hooks.ps1` and the post-commit hook (smoke test + auto-merge + push). Releases follow the shared Android release track: CI on PRs, `scripts/release.py rc/final`, signed APKs on GitHub releases, the on-phone checklist. See `voicebridge-release-gate-runbook`, PATTERNS.md §4–5 and `specs/007-android-release-track/`. Entries below that mention the old gate stay valid as history.
+
 # VoiceBridge Failure Archaeology
 
 The complete record of what has gone wrong (or was deliberately not attempted) in this

@@ -23,6 +23,7 @@ import java.io.File
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AndroidClientHeaders.init(this)
         val recordingFile = File(filesDir, "recording.wav")
         setContent {
             MaterialTheme {
