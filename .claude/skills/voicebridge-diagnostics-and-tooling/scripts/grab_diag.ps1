@@ -7,22 +7,24 @@
 .DESCRIPTION
   Collects, in order:
     1. Connected device/emulator list (adb devices -l)
-    2. Installed app version (dumpsys package com.mananpatel.voicebridge -> versionName/versionCode)
+    2. Installed app version (dumpsys package <AppId> -> versionName/versionCode)
     3. Current foreground activity (dumpsys activity activities -> topResumedActivity)
     4. Recent logcat: full dump tail, app-pid-filtered dump, and crash-pattern scan
-       (FATAL EXCEPTION / E AndroidRuntime -- the same gate smoke-test.ps1 uses)
+       (FATAL EXCEPTION / E AndroidRuntime -- the crash patterns the retired
+       smoke-test.ps1 used; the release workflow's smoke job checks logcat -b crash)
     5. Screenshot (screencap -p, pulled to the output folder)
     6. UI hierarchy dump (uiautomator dump ui.xml) for selector debugging
 
   Output folder default: android/app/build/diag-<timestamp>/ (gitignored via
-  android/.gitignore build/ rule), mirroring the smoke test's screenshot convention.
+  android/.gitignore build/ rule).
 
   ASCII-only: Windows PowerShell 5.1 reads .ps1 as ANSI; non-ASCII breaks parsing
-  (same rule smoke-test.ps1 documents in its header).
+  (keep it that way when editing).
 
   Read-only: this script never installs, taps, or mutates device or repo state.
 
-.PARAMETER AppId       Application id. Default: com.mananpatel.voicebridge.
+.PARAMETER AppId       Application id. Default: com.mananpatel.voicebridge.debug (the
+                      debug build since v0.1.0); pass com.mananpatel.voicebridge for a release APK.
 .PARAMETER AndroidHome Path to Android SDK. Default: C:\Android.
 .PARAMETER OutDir      Output folder. Default: <repo>\android\app\build\diag-<timestamp>.
 .PARAMETER LogLines    How many recent logcat lines to keep in the full dump. Default: 1500.
@@ -31,7 +33,7 @@
   powershell -File .claude/skills/voicebridge-diagnostics-and-tooling/scripts/grab_diag.ps1
 #>
 param(
-    [string] $AppId       = "com.mananpatel.voicebridge",
+    [string] $AppId       = "com.mananpatel.voicebridge.debug",
     [string] $AndroidHome = "C:\Android",
     [string] $OutDir      = "",
     [int]    $LogLines    = 1500
@@ -113,7 +115,7 @@ if ($appPid -ne "") {
         Out-File -FilePath (Join-Path $OutDir "logcat-app.txt") -Encoding ascii
 }
 
-# Crash scan: same patterns as the smoke test's crash gate (smoke-test.ps1 step 10)
+# Crash scan: FATAL EXCEPTION / E AndroidRuntime (the retired smoke-test.ps1's crash gate)
 $crashes = $fullLog | Select-String -Pattern "FATAL EXCEPTION|E AndroidRuntime"
 if ($crashes) {
     $crashes | Out-File -FilePath (Join-Path $OutDir "logcat-crashes.txt") -Encoding ascii
@@ -139,7 +141,7 @@ Adb shell uiautomator dump /sdcard/diag-ui.xml | Out-Null
 Adb pull /sdcard/diag-ui.xml (Join-Path $OutDir "ui.xml") | Out-Null
 Adb shell rm /sdcard/diag-ui.xml | Out-Null
 if (Test-Path (Join-Path $OutDir "ui.xml")) {
-    Log "ui hierarchy: ui.xml (match nodes by @text / @content-desc, as smoke-test.ps1 does)"
+    Log "ui hierarchy: ui.xml (match nodes by @text / @content-desc)"
 } else {
     Log "WARNING: uiautomator dump failed (screen locked, or system UI busy)"
 }
