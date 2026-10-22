@@ -105,7 +105,9 @@ jobs:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/release.jks
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ vars.ANDROID_KEY_ALIAS || 'release' }}
-        run: ./gradlew --no-daemon ":${APP_MODULE}:testReleaseUnitTest" ":${APP_MODULE}:lintRelease" ":${APP_MODULE}:assembleRelease"
+        # AGP 9 only creates unit-test tasks for the tested build type (debug): there is no
+        # testReleaseUnitTest. The unit tests run against the same sources either way.
+        run: ./gradlew --no-daemon ":${APP_MODULE}:testDebugUnitTest" ":${APP_MODULE}:lintRelease" ":${APP_MODULE}:assembleRelease"
       - name: Check the signature, name the APK
         env:
           EXPECTED_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
@@ -120,7 +122,12 @@ jobs:
           fi
           apksigner="$(printf '%s\n' "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -n 1)"
           "$apksigner" verify --print-certs "${apks[0]}" | tee "$RUNNER_TEMP/certs.txt"
-          actual="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/certs.txt")"
+          # Older apksigner prints "Signer #1 certificate ...", newer "V2 Signer: certificate ...".
+          actual="$(sed -nE 's/^(Signer #1|V[0-9.]+ Signer:) certificate SHA-256 digest: //p' "$RUNNER_TEMP/certs.txt" | head -n 1)"
+          if [ -z "$actual" ]; then
+            echo "::error::Couldn't read the certificate SHA-256 from apksigner's output (format changed?)."
+            exit 1
+          fi
           expected="$(printf '%s' "$EXPECTED_SHA256" | tr -d ':' | tr 'A-F' 'a-f')"
           if [ -n "$expected" ] && [ "$actual" != "$expected" ]; then
             echo "::error::Signed with certificate $actual, not ANDROID_CERT_SHA256 ($expected): wrong keystore."
