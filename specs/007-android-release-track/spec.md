@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-21
 
-**Status**: Built in v0.1.0 (light spec: the decisions were made in mananutils-platform)
+**Status**: Released in v0.1.0 on 2026-10-21; SC-001 to SC-003 met (light spec: the decisions were made in mananutils-platform)
 
 **Supersedes**: `specs/005-release-gate-automation/` (Windows PowerShell smoke test + post-commit
 auto-merge hook)

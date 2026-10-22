@@ -9,9 +9,11 @@ Agents should use Shell Mode to execute these scripts when:
 - Repetitive boilerplate tasks need to be performed.
 
 ### Maintenance Workflow
-1. **Preview**: Run `python .\scripts\optimize_changelog.py --dry-run` to see how Gemini suggests consolidating duplicate entries.
-2. **Apply**: Run `python .\scripts\optimize_changelog.py` to update the `Project_Structure.md`.
-3. **Verify**: Run `python .\scripts\verify_structure.py` to ensure project hygiene and changelog integrity.
+Run the scripts with the project venv (`.venv`, created by `.claude/session-setup.sh`): Debian 12+ has no system pip.
+
+1. **Preview**: Run `.venv/bin/python scripts/optimize_changelog.py --dry-run` to see how Gemini suggests consolidating duplicate entries.
+2. **Apply**: Run `.venv/bin/python scripts/optimize_changelog.py` to update the `Project_Structure.md`.
+3. **Verify**: Run `.venv/bin/python scripts/verify_structure.py` to ensure project hygiene and changelog integrity.
 
 ## Inventory
 | Script | Description |

@@ -10,6 +10,19 @@ Releases: `scripts/release.py` (rc → final), see PATTERNS.md §4.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-21
+### Fixed
+- `.claude/session-setup.sh` installs the Python deps into a project venv (`.venv`)
+  instead of the system pip, which Debian 12+ refuses (PEP 668). Re-installs only when
+  `requirements.txt` changes.
+- `grab_diag.ps1` defaults to the debug package `com.mananpatel.voicebridge.debug`
+  (the debug build's id since v0.1.0); its comments no longer point to the removed
+  `smoke-test.ps1`.
+### Changed
+- README, `scripts/README.md`, CLAUDE.md: run `scripts/*.py` with `.venv/bin/python`.
+- `specs/007-android-release-track`: all tasks done, including the two template bugs
+  found by v0.1.0-rc.1 and rc.2.
+
 ## [0.1.0] - 2026-10-21
 ### Changed
 - **Release process**: VoiceBridge adopts the Android track of the shared

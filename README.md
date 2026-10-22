@@ -186,13 +186,13 @@ Every feature beyond a trivial fix runs the [Spec Kit](https://github.com/github
 To plan the next chunk:
 
 ```bash
-python ./scripts/generate_bootstrap_prompt.py "Add Gujarati-to-English translation using the Cloud Translation API"
+.venv/bin/python scripts/generate_bootstrap_prompt.py "Add Gujarati-to-English translation using the Cloud Translation API"
 ```
 
 Copy the generated prompt from `bootstrap_prompts/` into a Gemini session.
 
-**Maintenance** (run after every feature):
+**Maintenance** (run after every feature; `.venv` is the project venv that `.claude/session-setup.sh` creates, or `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`):
 ```bash
-python ./scripts/verify_structure.py
-python ./scripts/optimize_changelog.py --dry-run
+.venv/bin/python scripts/verify_structure.py
+.venv/bin/python scripts/optimize_changelog.py --dry-run
 ```

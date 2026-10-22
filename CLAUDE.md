@@ -13,6 +13,8 @@ wins. Features beyond a trivial fix go through the Spec Kit chain (`/speckit-spe
   Never use the Nexus 6P (10.0.0.40) for app testing: it's the backup Pi-hole.
 - Before a PR, run what CI runs: `cd android && ./gradlew testDebugUnitTest lintDebug assembleDebug`.
   Lint errors fail the build.
+- Python scripts (`scripts/*.py`) run with the project venv: `.venv/bin/python scripts/verify_structure.py`
+  after every change. `.claude/session-setup.sh` creates `.venv`; the system Python has no pip.
 - `android/local.properties` (gitignored) holds `sdk.dir` and `GCP_STT_API_KEY`. The owner
   types the key; never print it, put it on a command line or commit it.
 

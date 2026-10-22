@@ -19,6 +19,18 @@ if [ ! -f android/local.properties ]; then
   echo "SessionStart: generated android/local.properties (sdk.dir=$ANDROID_HOME)"
 fi
 
-# 2. Python deps for scripts/*.py — fast no-op when already satisfied.
-python3 -m pip install -q -r requirements.txt 2>/dev/null \
-  || python -m pip install -q -r requirements.txt
+# 2. Python deps for scripts/*.py, in a project venv (.venv, gitignored). Debian 12+
+#    refuses system-wide pip installs (PEP 668), so never use the system pip.
+#    No-op when requirements.txt hasn't changed since the last install.
+if [ ! -x .venv/bin/python ]; then
+  if ! python3 -m venv .venv; then
+    rm -rf .venv
+    echo "SessionStart: 'python3 -m venv' failed (Debian: install python3-venv); skipped Python deps" >&2
+    exit 0
+  fi
+fi
+stamp=".venv/.requirements.sha256"
+if ! sha256sum --status -c "$stamp" 2>/dev/null; then
+  .venv/bin/python -m pip install -q --disable-pip-version-check -r requirements.txt
+  sha256sum requirements.txt > "$stamp"
+fi
